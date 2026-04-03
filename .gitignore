@@ -36,6 +36,7 @@ yarn-error.log*
 *~
 .qodo/
 .gemini/
+pyrightconfig.json
 
 # ─── OS Files ──────────────────────────────────
 .DS_Store
