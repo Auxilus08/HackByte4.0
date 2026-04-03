@@ -165,6 +165,35 @@ async def voice_report(
 
     await db.flush()
 
+    # ── WebSocket Broadcast ───────────────────────────────────
+    try:
+        from src.services.websocket import manager
+        from src.utils import geom_to_latlng
+        
+        # Manually build accident data (ORM has location_geom, not location)
+        accident_location = geom_to_latlng(accident.location_geom)
+        accident_data = {
+            "id": str(accident.id),
+            "source_id": accident.source_id,
+            "description": accident.description,
+            "location_name": accident.location_name,
+            "location": {"lat": accident_location.lat, "lng": accident_location.lng} if accident_location else None,
+            "criticality": accident.criticality,
+            "assistance_required": accident.assistance_required,
+            "status": accident.status,
+            "created_at": str(accident.created_at),
+            "updated_at": str(accident.updated_at),
+        }
+        await manager.broadcast("new_accident", accident_data)
+        
+        # Broadcast dispatch if task exists
+        if task:
+            from src.schemas.task import TaskRead
+            task_data = TaskRead.model_validate(task).model_dump(mode="json")
+            await manager.broadcast("volunteer_dispatched", task_data)
+    except Exception as e:
+        logger.error(f"WebSocket broadcast failed in voice route: {e}")
+
     # ── Speak confirmation back to caller ─────────────────────
     twiml = voice_svc.report_confirmation(
         criticality=criticality,

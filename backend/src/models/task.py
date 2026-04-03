@@ -9,8 +9,8 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    accident_id = Column(UUID(as_uuid=True), ForeignKey("accidents.id"), nullable=False)
-    volunteer_id = Column(UUID(as_uuid=True), ForeignKey("volunteers.id"), nullable=False)
+    accident_id = Column(UUID(as_uuid=True), ForeignKey("accidents.id", ondelete="CASCADE"), nullable=False)
+    volunteer_id = Column(UUID(as_uuid=True), ForeignKey("volunteers.id", ondelete="SET NULL"), nullable=True)
     
     # Task Status: pending, accepted, in-progress, completed, verified
     status = Column(String, default="pending")

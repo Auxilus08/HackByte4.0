@@ -85,7 +85,17 @@ async def create_task(
     db.add(task)
     await db.flush()
     await db.refresh(task)
-    return TaskRead.model_validate(task)
+    
+    task_data = TaskRead.model_validate(task)
+    
+    # ── WebSocket Broadcast ───────────────────────────────────
+    try:
+        from src.services.websocket import manager
+        await manager.broadcast("task_updated", task_data.model_dump(mode="json"))
+    except Exception:
+        pass
+        
+    return task_data
 
 
 @router.patch("/{task_id}", response_model=TaskRead)
@@ -106,7 +116,17 @@ async def update_task(
 
     await db.flush()
     await db.refresh(task)
-    return TaskRead.model_validate(task)
+    
+    task_data = TaskRead.model_validate(task)
+    
+    # ── WebSocket Broadcast ───────────────────────────────────
+    try:
+        from src.services.websocket import manager
+        await manager.broadcast("task_updated", task_data.model_dump(mode="json"))
+    except Exception:
+        pass
+        
+    return task_data
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)

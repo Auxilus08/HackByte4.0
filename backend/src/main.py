@@ -7,11 +7,12 @@ Run with:
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.settings import settings
 from src.routes import accidents_router, volunteers_router, tasks_router, voice_router
+from src.services.websocket import manager
 
 
 # ── Lifespan (startup / shutdown) ──────────────────────────────
@@ -61,3 +62,15 @@ app.include_router(voice_router, prefix="/api/v1")
 async def health_check():
     """Basic health check endpoint."""
     return {"status": "healthy", "service": "smartaccident-api"}
+
+# ── WebSockets ─────────────────────────────────────────────────
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive, can be used for ping/pong if needed
+            data = await websocket.receive_text()
+            # We don't necessarily need to respond to client messages right now
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)

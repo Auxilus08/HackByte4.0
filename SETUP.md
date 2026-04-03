@@ -61,10 +61,10 @@ POSTGRES_DB=smartaccident_db
 # ─── App ───────────────────────────────────────
 SECRET_KEY=change_me_in_production
 
-# ─── Trello API (get from https://trello.com/power-ups/admin) ───
-TRELLO_API_KEY=
-TRELLO_API_TOKEN=
-TRELLO_WEBHOOK_SECRET=
+# ─── Twilio Voice API ─────────────────────────
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
 
 # ─── Google Maps Geocoding API ─────────────────
 GOOGLE_MAPS_API_KEY=
