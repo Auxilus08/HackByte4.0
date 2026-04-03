@@ -130,9 +130,12 @@ async def voice_report(
     )
     criticality = ml_result["prediction"]
 
+    import time
+    source_id = f"voice-{caller}-{int(time.time())}"
+
     # ── Store the accident ────────────────────────────────────
     accident = Accident(
-        trello_card_id=f"voice-{caller}",   # reuse field for caller ID
+        source_id=source_id,
         description=description,
         location_name=location,
         location_geom=location_geom,
