@@ -25,6 +25,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${outfit.variable} h-full antialiased dark`}
     >
       <body className="min-h-full bg-[#050505] text-[#f0f0f0] selection:bg-red-500/30">

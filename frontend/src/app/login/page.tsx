@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { API_ROUTES } from "@/lib/api";
 import { motion } from "framer-motion";
-import { Activity, Shield, Users, ArrowRight, Phone, Lock, User, Wallet } from "lucide-react";
+import { Activity, Shield, Users, ArrowRight, Phone, Lock, User, Wallet, MapPin } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"select" | "admin" | "volunteer-login" | "volunteer-register">("select");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [geoLocation, setGeoLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
 
   // Admin form
   const [adminUser, setAdminUser] = useState("admin");
@@ -21,6 +23,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [wallet, setWallet] = useState("");
+
+  // Request geolocation when switching to register mode
+  useEffect(() => {
+    if (mode === "volunteer-register" && geoStatus === "idle") {
+      setGeoStatus("requesting");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setGeoLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setGeoStatus("granted");
+        },
+        () => {
+          setGeoStatus("denied");
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }, [mode, geoStatus]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +93,13 @@ export default function LoginPage() {
       const res = await fetch(API_ROUTES.register, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, password, wallet_address: wallet || null }),
+        body: JSON.stringify({ 
+          name, 
+          phone, 
+          password, 
+          wallet_address: wallet || null,
+          location: geoLocation || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Registration failed");

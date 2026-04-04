@@ -30,11 +30,17 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=4, examples=["pass1234"])
 
 
+class LatLng(BaseModel):
+    lat: float
+    lng: float
+
+
 class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=1, examples=["Rahul Sharma"])
     phone: str = Field(..., min_length=1, examples=["+919876543210"])
     password: str = Field(..., min_length=4, examples=["pass1234"])
     wallet_address: str | None = Field(None, examples=["0xABC..."])
+    location: LatLng | None = None
 
 
 class AdminLoginRequest(BaseModel):
@@ -111,6 +117,8 @@ async def register_volunteer(
         wallet_address=body.wallet_address,
         is_available=True,
     )
+    if body.location:
+        volunteer.location_geom = latlng_to_wkb(body.location.lat, body.location.lng)
     db.add(volunteer)
     await db.flush()
     await db.refresh(volunteer)
