@@ -6,11 +6,11 @@ Complete setup instructions for running SmartAccident locally using **Docker Com
 
 ## Prerequisites
 
-| Tool | Version | Install |
-|---|---|---|
-| **Git** | 2.x+ | [git-scm.com](https://git-scm.com/) |
-| **Docker** | 24.x+ | [docker.com/get-docker](https://docs.docker.com/get-docker/) |
-| **Docker Compose** | v2.x+ (included with Docker Desktop) | Comes with Docker Desktop |
+| Tool               | Version                              | Install                                                      |
+| ------------------ | ------------------------------------ | ------------------------------------------------------------ |
+| **Git**            | 2.x+                                 | [git-scm.com](https://git-scm.com/)                          |
+| **Docker**         | 24.x+                                | [docker.com/get-docker](https://docs.docker.com/get-docker/) |
+| **Docker Compose** | v2.x+ (included with Docker Desktop) | Comes with Docker Desktop                                    |
 
 > **That's it.** No Python, Node.js, or database installation needed — everything runs inside containers.
 
@@ -65,6 +65,7 @@ docker compose up --build -d
 ```
 
 This single command will:
+
 1. Pull and start **PostgreSQL 16 + PostGIS** database
 2. Build and start the **FastAPI backend** (auto-runs database migrations + ML model training)
 3. Build and start the **Next.js 16 frontend**
@@ -88,18 +89,18 @@ smartaccident_frontend   Up              0.0.0.0:3000->3000/tcp
 
 ## 4. Access the Application
 
-| Service | URL | Description |
-|---|---|---|
-| **Frontend** | [http://localhost:3000](http://localhost:3000) | Landing page → Login → Dashboard |
-| **Backend API** | [http://localhost:8000/docs](http://localhost:8000/docs) | Swagger UI (interactive API docs) |
-| **Health Check** | [http://localhost:8000/health](http://localhost:8000/health) | API status endpoint |
+| Service          | URL                                                          | Description                       |
+| ---------------- | ------------------------------------------------------------ | --------------------------------- |
+| **Frontend**     | [http://localhost:3000](http://localhost:3000)               | Landing page → Login → Dashboard  |
+| **Backend API**  | [http://localhost:8000/docs](http://localhost:8000/docs)     | Swagger UI (interactive API docs) |
+| **Health Check** | [http://localhost:8000/health](http://localhost:8000/health) | API status endpoint               |
 
 ### Default Credentials
 
-| Role | Username | Password |
-|---|---|---|
-| **Admin** | `admin` | `admin123` |
-| **Volunteer** | Register via the login page | — |
+| Role          | Username                    | Password   |
+| ------------- | --------------------------- | ---------- |
+| **Admin**     | `admin`                     | `admin123` |
+| **Volunteer** | Register via the login page | —          |
 
 ---
 
@@ -226,16 +227,16 @@ docker exec smartaccident_backend alembic current
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---|---|
-| `port 5432 already in use` | Stop local PostgreSQL: `sudo systemctl stop postgresql` (Linux) or stop PostgreSQL in Windows Services |
-| `port 3000 already in use` | Kill the process: `lsof -ti:3000 \| xargs kill` |
-| `port 8000 already in use` | Kill the process: `lsof -ti:8000 \| xargs kill` |
-| Backend keeps restarting | Check logs: `docker compose logs backend` — likely a DB connection issue |
-| Frontend build fails | Delete volumes and rebuild: `docker compose down -v && docker compose up --build -d` |
-| `docker compose` not found | Upgrade Docker Desktop or install `docker-compose-plugin` |
-| WSL/Hyper-V issues (Windows) | Enable WSL2 and Hyper-V in Windows Features, restart Docker Desktop |
-| Container `unhealthy` | Wait 30s for DB to initialize, then check: `docker compose ps` |
+| Problem                      | Solution                                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `port 5432 already in use`   | Stop local PostgreSQL: `sudo systemctl stop postgresql` (Linux) or stop PostgreSQL in Windows Services |
+| `port 3000 already in use`   | Kill the process: `lsof -ti:3000 \| xargs kill`                                                        |
+| `port 8000 already in use`   | Kill the process: `lsof -ti:8000 \| xargs kill`                                                        |
+| Backend keeps restarting     | Check logs: `docker compose logs backend` — likely a DB connection issue                               |
+| Frontend build fails         | Delete volumes and rebuild: `docker compose down -v && docker compose up --build -d`                   |
+| `docker compose` not found   | Upgrade Docker Desktop or install `docker-compose-plugin`                                              |
+| WSL/Hyper-V issues (Windows) | Enable WSL2 and Hyper-V in Windows Features, restart Docker Desktop                                    |
+| Container `unhealthy`        | Wait 30s for DB to initialize, then check: `docker compose ps`                                         |
 
 ---
 
@@ -275,4 +276,12 @@ HackByte4.0/
 ├── docker-compose.yml              # All services: DB + Backend + Frontend
 ├── .env.example                    # Environment variable template
 └── SETUP.md                        # ← You are here
+```
+
+## To make a call
+
+```
+curl -X POST "https://api.twilio.com/2010-04-01/Accounts/<TWILIO_ACCOUNT_SID>/Calls.json" \  --data-urlencode "To=+917722083870" \  --data-urlencode "From=+16625722754" \
+  --data-urlencode "Url=https://wabblingly-tweedier-rylie.ngrok-free.dev/api/v1/voice/incoming" \
+  -u "<TWILIO_ACCOUNT_SID>:<TWILIO_AUTH_TOKEN>"
 ```

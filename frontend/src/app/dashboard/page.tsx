@@ -188,28 +188,61 @@ export default function DashboardHome() {
           
           <div className="glass-panel rounded-2xl p-5 md:p-6 relative overflow-hidden scanline-overlay">
             <div className="space-y-5 relative z-10">
-              {[
-                { name: "BACKEND API", online: isApiHealthy, color: "emerald" },
-                { name: "ML PREDICTION", online: isApiHealthy, color: "orange" },
-                { name: "GEO-DISPATCH", online: activeTasks.length > 0, idle: activeTasks.length === 0, color: activeTasks.length > 0 ? "emerald" : "yellow" },
-                { name: "BLOCKCHAIN", online: poolData && !poolData?.error, color: "purple" },
-              ].map((sys) => (
-                <div key={sys.name}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono text-gray-500 tracking-widest">{sys.name}</span>
-                    <span className={`flex items-center gap-1.5 text-[9px] font-bold tracking-widest px-2 py-0.5 rounded-md border text-${sys.color}-400 bg-${sys.color}-500/10 border-${sys.color}-500/20`}>
-                      <span className={`w-1.5 h-1.5 rounded-full bg-${sys.color}-400 ${sys.online ? 'animate-pulse' : ''}`} />
-                      {sys.online ? (sys.idle ? "IDLE" : "ONLINE") : "CHECK"}
-                    </span>
-                  </div>
-                  <div className="w-full bg-black/50 rounded-full h-1 border border-white/5 overflow-hidden">
-                    <div 
-                      className={`h-1 rounded-full bg-gradient-to-r from-${sys.color}-600 to-${sys.color}-400 transition-all duration-1000`} 
-                      style={{ width: sys.online ? (sys.idle ? '45%' : '95%') : '10%' }} 
-                    />
-                  </div>
+              {/* Backend API */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono text-gray-500 tracking-widest">BACKEND API</span>
+                  <span className={`flex items-center gap-1.5 text-[9px] font-bold tracking-widest px-2 py-0.5 rounded-md border ${isApiHealthy ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isApiHealthy ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                    {isApiHealthy ? "ONLINE" : "CHECK"}
+                  </span>
                 </div>
-              ))}
+                <div className="w-full bg-black/50 rounded-full h-1 border border-white/5 overflow-hidden">
+                  <div className={`h-1 rounded-full transition-all duration-1000 ${isApiHealthy ? 'bg-gradient-to-r from-emerald-600 to-emerald-400 w-[95%]' : 'bg-red-500 w-[10%]'}`} />
+                </div>
+              </div>
+
+              {/* ML Prediction */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono text-gray-500 tracking-widest">ML PREDICTION</span>
+                  <span className={`flex items-center gap-1.5 text-[9px] font-bold tracking-widest px-2 py-0.5 rounded-md border ${isApiHealthy ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-gray-500 bg-gray-500/10 border-gray-500/20'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isApiHealthy ? 'bg-amber-400 animate-pulse' : 'bg-gray-500'}`} />
+                    {isApiHealthy ? "ONLINE" : "CHECK"}
+                  </span>
+                </div>
+                <div className="w-full bg-black/50 rounded-full h-1 border border-white/5 overflow-hidden">
+                  <div className={`h-1 rounded-full transition-all duration-1000 ${isApiHealthy ? 'bg-gradient-to-r from-amber-600 to-amber-400 w-[95%]' : 'bg-gray-600 w-[10%]'}`} />
+                </div>
+              </div>
+
+              {/* Geo-Dispatch */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono text-gray-500 tracking-widest">GEO-DISPATCH</span>
+                  <span className={`flex items-center gap-1.5 text-[9px] font-bold tracking-widest px-2 py-0.5 rounded-md border ${activeTasks.length > 0 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${activeTasks.length > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-yellow-400'}`} />
+                    {activeTasks.length > 0 ? "ACTIVE" : "IDLE"}
+                  </span>
+                </div>
+                <div className="w-full bg-black/50 rounded-full h-1 border border-white/5 overflow-hidden">
+                  <div className={`h-1 rounded-full transition-all duration-1000 ${activeTasks.length > 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-400' : 'bg-gradient-to-r from-yellow-600 to-yellow-400'}`} style={{ width: activeTasks.length > 0 ? '85%' : '45%' }} />
+                </div>
+              </div>
+
+              {/* Blockchain */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono text-gray-500 tracking-widest">BLOCKCHAIN</span>
+                  <span className={`flex items-center gap-1.5 text-[9px] font-bold tracking-widest px-2 py-0.5 rounded-md border ${poolData && !poolData?.error ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${poolData && !poolData?.error ? 'bg-purple-400' : 'bg-yellow-400'}`} />
+                    {poolData && !poolData?.error ? "SYNCED" : "CHECK"}
+                  </span>
+                </div>
+                <div className="w-full bg-black/50 rounded-full h-1 border border-white/5 overflow-hidden">
+                  <div className={`h-1 rounded-full transition-all duration-1000 ${poolData && !poolData?.error ? 'bg-gradient-to-r from-purple-600 to-purple-400 w-[90%]' : 'bg-gradient-to-r from-yellow-600 to-yellow-400 w-[30%]'}`} />
+                </div>
+              </div>
 
               {/* Pool Info */}
               {poolData && !poolData?.error && (

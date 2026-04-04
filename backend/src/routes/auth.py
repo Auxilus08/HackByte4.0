@@ -118,7 +118,7 @@ async def register_volunteer(
         is_available=True,
     )
     if body.location:
-        volunteer.location_geom = latlng_to_wkb(body.location.lat, body.location.lng)
+        volunteer.current_location = latlng_to_wkb(body.location)
     db.add(volunteer)
     await db.flush()
     await db.refresh(volunteer)

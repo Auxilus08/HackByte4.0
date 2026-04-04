@@ -9,6 +9,7 @@ Handles:
 
 import logging
 import re
+from urllib.parse import quote
 
 from twilio.twiml.voice_response import VoiceResponse, Gather
 
@@ -75,7 +76,7 @@ class VoiceService:
 
         gather = Gather(
             input="speech",
-            action=f"/api/v1/voice/report?location={location}",
+            action=f"/api/v1/voice/report?location={quote(location)}",
             method="POST",
             timeout=5,
             speech_timeout="auto",
