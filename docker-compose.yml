@@ -27,39 +27,36 @@ services:
       - smartaccident_net
 
   # ─────────────────────────────────────────
-  # FastAPI Backend (with hot reload)
+  # FastAPI Backend
   # ─────────────────────────────────────────
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: smartaccident_backend
     restart: unless-stopped
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir src
+    command: >
+      sh -c "alembic upgrade head && 
+             python -c \"import sys; sys.path.insert(0,'..'); exec(open('../ml-model/train.py').read())\" 2>/dev/null || true &&
+             uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir src"
     environment:
-      # Database
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-smartaccident}:${POSTGRES_PASSWORD:-smartaccident_secret}@db:5432/${POSTGRES_DB:-smartaccident_db}
-      # App
       APP_ENV: development
       SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
-      # Twilio
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
       TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
-      # Google Maps
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
-      # Blockchain
       WEB3_PROVIDER_URL: ${WEB3_PROVIDER_URL:-}
       REWARD_CONTRACT_ADDRESS: ${REWARD_CONTRACT_ADDRESS:-}
       DEPLOYER_PRIVATE_KEY: ${DEPLOYER_PRIVATE_KEY:-}
-      # CORS
       CORS_ORIGINS: "http://localhost:3000"
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./ml-model:/ml-model:ro
       - /app/__pycache__
-      - /app/.venv
     depends_on:
       db:
         condition: service_healthy
@@ -67,28 +64,23 @@ services:
       - smartaccident_net
 
   # ─────────────────────────────────────────
-  # Next.js Frontend (with hot reload)
+  # Next.js Frontend
   # ─────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: smartaccident_frontend
     restart: unless-stopped
-    command: npm run dev
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:8000
-      NEXT_PUBLIC_WS_URL: ws://localhost:8000/ws
-      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
-      # Allows Next.js to connect to the backend container by name internally
-      BACKEND_INTERNAL_URL: http://backend:8000
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
-      - /app/node_modules # Preserve container's node_modules
-      - /app/.next # Preserve Next.js build cache
+      - /app/node_modules
+      - /app/.next
     depends_on:
       - backend
     networks:

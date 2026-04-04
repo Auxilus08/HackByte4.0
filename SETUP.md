@@ -1,21 +1,18 @@
 # SmartAccident — Setup Guide
 
-Complete setup instructions for running the SmartAccident platform locally on **Linux** and **Windows**.
+Complete setup instructions for running SmartAccident locally using **Docker Compose**. One command gets everything running.
 
 ---
 
 ## Prerequisites
 
-Ensure the following are installed on your system before proceeding:
-
-| Tool | Version | Purpose |
+| Tool | Version | Install |
 |---|---|---|
-| **Git** | 2.x+ | Version control |
-| **Docker** | 24.x+ | Container runtime |
-| **Docker Compose** | v2.x+ (included with Docker Desktop) | Multi-container orchestration |
-| **Python** | 3.12+ | Backend runtime |
-| **Node.js** | 20.x+ LTS | Frontend runtime |
-| **npm** | 10.x+ | Node package manager |
+| **Git** | 2.x+ | [git-scm.com](https://git-scm.com/) |
+| **Docker** | 24.x+ | [docker.com/get-docker](https://docs.docker.com/get-docker/) |
+| **Docker Compose** | v2.x+ (included with Docker Desktop) | Comes with Docker Desktop |
+
+> **That's it.** No Python, Node.js, or database installation needed — everything runs inside containers.
 
 ---
 
@@ -28,306 +25,217 @@ cd HackByte4.0
 
 ---
 
-## 2. Environment Configuration
+## 2. Configure Environment
 
-Create a `.env` file in the project root by copying the example:
-
-### Linux / macOS
+Copy the example environment file and edit it:
 
 ```bash
 cp .env.example .env
 ```
 
-### Windows (PowerShell)
-
-```powershell
-Copy-Item .env.example .env
-```
-
-### Windows (CMD)
-
-```cmd
-copy .env.example .env
-```
-
-Then edit `.env` and fill in the required values:
+Open `.env` and fill in the values:
 
 ```dotenv
-# ─── Database ──────────────────────────────────
-POSTGRES_USER=smartaccident
-POSTGRES_PASSWORD=smartaccident_secret
-POSTGRES_DB=smartaccident_db
-
-# ─── App ───────────────────────────────────────
+# ─── Database (defaults work out of the box) ───
+DATABASE_URL=postgresql+asyncpg://smartaccident:smartaccident_secret@db:5432/smartaccident_db
 SECRET_KEY=change_me_in_production
 
-# ─── Twilio Voice API ─────────────────────────
+# ─── Twilio Voice API (optional — for real phone calls) ───
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_PHONE_NUMBER=
 
-# ─── Google Maps Geocoding API ─────────────────
+# ─── Google Maps Geocoding API (optional) ───
 GOOGLE_MAPS_API_KEY=
 
-# ─── Blockchain (Polygon) ─────────────────────
-WEB3_PROVIDER_URL=
+# ─── Blockchain / Polygon Amoy (optional) ───
+WEB3_PROVIDER_URL=https://rpc-amoy.polygon.technology
 REWARD_CONTRACT_ADDRESS=
 DEPLOYER_PRIVATE_KEY=
 ```
 
-> **Note:** For initial development, only the database credentials are required. API keys can be added later.
+> **Note:** For initial setup, only `DATABASE_URL` and `SECRET_KEY` are needed. The platform starts in simulation/fallback mode for Twilio, geocoding, and blockchain features if those keys are not set.
 
 ---
 
-## 3. Start the Database (Docker)
-
-The PostgreSQL + PostGIS database runs in a Docker container.
-
-### Linux / macOS
+## 3. Start Everything
 
 ```bash
-# Start the database service in detached mode
-docker compose up db -d
+docker compose up --build -d
+```
 
-# Verify it's running and healthy
+This single command will:
+1. Pull and start **PostgreSQL 16 + PostGIS** database
+2. Build and start the **FastAPI backend** (auto-runs database migrations + ML model training)
+3. Build and start the **Next.js 16 frontend**
+
+Wait ~60 seconds for the initial build, then verify:
+
+```bash
 docker compose ps
 ```
 
-### Windows (PowerShell / CMD)
+Expected output — all 3 services should be `Up`:
 
-```powershell
-# Start the database service in detached mode
-docker compose up db -d
-
-# Verify it's running and healthy
-docker compose ps
 ```
-
-> **Expected output:** The `smartaccident_db` container should show status `Up (healthy)`.
-
-### Verify PostGIS Extensions
-
-```bash
-docker exec smartaccident_db psql -U smartaccident -d smartaccident_db -c "\dx"
+NAME                     STATUS          PORTS
+smartaccident_db         Up (healthy)    0.0.0.0:5432->5432/tcp
+smartaccident_backend    Up              0.0.0.0:8000->8000/tcp
+smartaccident_frontend   Up              0.0.0.0:3000->3000/tcp
 ```
-
-You should see `postgis`, `postgis_topology`, `fuzzystrmatch`, and `postgis_tiger_geocoder`.
 
 ---
 
-## 4. Backend Setup
-
-### Linux / macOS
-
-```bash
-# Navigate to backend directory
-cd backend
-
-# Create a Python virtual environment
-python3 -m venv venv
-
-# Activate the virtual environment
-source venv/bin/activate
-
-# Install dependencies
-pip install sqlalchemy geoalchemy2 psycopg2-binary asyncpg shapely numpy
-pip install fastapi uvicorn alembic pydantic
-
-# Run database migrations
-alembic upgrade head
-
-# Verify migration
-alembic current
-# Expected output: 31a717b2606a (head)
-```
-
-### Windows (PowerShell)
-
-```powershell
-# Navigate to backend directory
-cd backend
-
-# Create a Python virtual environment
-python -m venv venv
-
-# Activate the virtual environment
-.\venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install sqlalchemy geoalchemy2 psycopg2-binary asyncpg shapely numpy
-pip install fastapi uvicorn alembic pydantic
-
-# Run database migrations
-alembic upgrade head
-
-# Verify migration
-alembic current
-# Expected output: 31a717b2606a (head)
-```
-
-### Windows (CMD)
-
-```cmd
-cd backend
-python -m venv venv
-.\venv\Scripts\activate.bat
-
-pip install sqlalchemy geoalchemy2 psycopg2-binary asyncpg shapely numpy
-pip install fastapi uvicorn alembic pydantic
-
-alembic upgrade head
-alembic current
-```
-
-> **Windows Note:** If `psycopg2-binary` fails to install, you may need to install the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/). Alternatively, use `psycopg2-binary` which provides pre-built wheels for Windows.
-
-### Verify Database Tables
-
-```bash
-docker exec smartaccident_db psql -U smartaccident -d smartaccident_db -c "\dt public.*"
-```
-
-Expected tables: `accidents`, `volunteers`, `tasks`, `alembic_version`, `spatial_ref_sys`.
-
----
-
-## 5. Frontend Setup (Coming Soon)
-
-The frontend is not yet scaffolded. Once available:
-
-### Linux / macOS
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Windows (PowerShell / CMD)
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend will be available at `http://localhost:3000`.
-
----
-
-## 6. Running the Full Stack with Docker Compose
-
-Once all services have Dockerfiles, you can start everything at once:
-
-```bash
-# From the project root
-docker compose up -d
-
-# Check status of all services
-docker compose ps
-
-# View logs
-docker compose logs -f
-```
+## 4. Access the Application
 
 | Service | URL | Description |
 |---|---|---|
-| **Database** | `localhost:5432` | PostgreSQL + PostGIS |
-| **Backend** | `http://localhost:8000` | FastAPI server |
-| **Frontend** | `http://localhost:3000` | Next.js dashboard |
+| **Frontend** | [http://localhost:3000](http://localhost:3000) | Landing page → Login → Dashboard |
+| **Backend API** | [http://localhost:8000/docs](http://localhost:8000/docs) | Swagger UI (interactive API docs) |
+| **Health Check** | [http://localhost:8000/health](http://localhost:8000/health) | API status endpoint |
+
+### Default Credentials
+
+| Role | Username | Password |
+|---|---|---|
+| **Admin** | `admin` | `admin123` |
+| **Volunteer** | Register via the login page | — |
 
 ---
 
-## Common Commands Reference
+## 5. Test the Full Pipeline
+
+You can test the entire flow using `curl` — no Twilio account needed:
+
+```bash
+# 1. Register a volunteer
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Rahul Sharma",
+    "phone": "+919876543210",
+    "password": "pass123",
+    "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28",
+    "location": {"lat": 21.15, "lng": 79.09}
+  }'
+
+# 2. Simulate a voice-reported accident
+curl -X POST "http://localhost:8000/api/v1/voice/report?location=NH44+near+Nagpur" \
+  -d "SpeechResult=Major+truck+accident+with+5+people+trapped+fire+spreading&Confidence=0.9&From=+919876543210"
+
+# 3. Open the dashboard to see the incident
+# → http://localhost:3000/login (login as admin/admin123)
+
+# 4. Check tasks
+curl http://localhost:8000/api/v1/tasks/
+
+# 5. Verify a task (triggers blockchain reward if configured)
+curl -X PATCH http://localhost:8000/api/v1/tasks/{TASK_ID} \
+  -H "Content-Type: application/json" \
+  -d '{"status": "verified"}'
+```
+
+---
+
+## 6. Blockchain Setup (Optional)
+
+If you want blockchain rewards to work:
+
+### Deploy the Smart Contract
+
+```bash
+# Install Node.js 20+ locally (only needed for contract deployment)
+cd blockchain
+npm install
+npx hardhat compile
+npx hardhat test                                 # 8 passing tests
+npx hardhat run scripts/deploy.js --network amoy  # Deploy to Polygon Amoy
+```
+
+After deployment, update your `.env`:
+
+```dotenv
+WEB3_PROVIDER_URL=https://rpc-amoy.polygon.technology
+REWARD_CONTRACT_ADDRESS=0xYourDeployedContractAddress
+DEPLOYER_PRIVATE_KEY=your_deployer_private_key
+```
+
+Then restart the backend:
+
+```bash
+docker compose restart backend
+```
+
+### Fund the Reward Pool
+
+Send test MATIC to the contract address via [Polygon Amoy Faucet](https://faucet.polygon.technology/).
+
+---
+
+## Common Commands
+
+### Service Management
+
+```bash
+# Start all services
+docker compose up -d
+
+# Start all services (rebuild images)
+docker compose up --build -d
+
+# Stop all services
+docker compose down
+
+# View logs (all services)
+docker compose logs -f
+
+# View logs (specific service)
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f db
+
+# Restart a single service
+docker compose restart backend
+```
 
 ### Database
 
 ```bash
-# Start database only
-docker compose up db -d
-
-# Stop database
-docker compose stop db
-
-# View database logs
-docker compose logs db -f
-
 # Connect to PostgreSQL shell
 docker exec -it smartaccident_db psql -U smartaccident -d smartaccident_db
 
+# Check tables
+docker exec smartaccident_db psql -U smartaccident -d smartaccident_db -c "\dt public.*"
+
+# Check PostGIS extensions
+docker exec smartaccident_db psql -U smartaccident -d smartaccident_db -c "\dx"
+
 # Reset database (CAUTION: deletes all data)
 docker compose down -v
-docker compose up db -d
+docker compose up --build -d
 ```
 
-### Alembic (Migrations)
+### Run Migrations Manually
 
 ```bash
-# Apply all pending migrations
-alembic upgrade head
-
-# Show current migration version
-alembic current
-
-# Show migration history
-alembic history
-
-# Generate a new migration after model changes
-alembic revision --autogenerate -m "describe_your_change"
-
-# Rollback last migration
-alembic downgrade -1
-
-# Rollback all migrations
-alembic downgrade base
-```
-
-### Backend (once main.py is set up)
-
-```bash
-# Start the FastAPI dev server
-uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
-
-# API docs will be at:
-# http://localhost:8000/docs      (Swagger UI)
-# http://localhost:8000/redoc     (ReDoc)
+docker exec smartaccident_backend alembic upgrade head
+docker exec smartaccident_backend alembic current
 ```
 
 ---
 
 ## Troubleshooting
 
-### Docker Issues
-
 | Problem | Solution |
 |---|---|
-| `port 5432 already in use` | Stop any local PostgreSQL: `sudo systemctl stop postgresql` (Linux) or stop the PostgreSQL service in Windows Services |
-| `docker compose` not found | Upgrade Docker Desktop to latest version, or install `docker-compose-plugin` |
-| Container keeps restarting | Check logs: `docker compose logs db` |
-
-### Python / pip Issues
-
-| Problem | Solution |
-|---|---|
-| `psycopg2` build fails (Windows) | Use `pip install psycopg2-binary` instead |
-| `ModuleNotFoundError` | Make sure the venv is activated: `source venv/bin/activate` (Linux) or `.\venv\Scripts\Activate.ps1` (Windows) |
-| Wrong Python version | Verify with `python --version`, needs 3.12+ |
-
-### Alembic Issues
-
-| Problem | Solution |
-|---|---|
-| `Connection refused` on migration | Ensure Docker DB is running: `docker compose ps` |
-| `DuplicateTableError` | Tables already exist. Drop and re-migrate: `alembic downgrade base && alembic upgrade head` |
-| `Target database is not up to date` | Run `alembic upgrade head` first |
-
-### Windows-Specific
-
-| Problem | Solution |
-|---|---|
-| `venv\Scripts\Activate.ps1` blocked | Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` in PowerShell as Admin |
-| Line ending issues | Run `git config core.autocrlf true` before cloning |
-| Docker Desktop not starting | Enable WSL2 and Hyper-V in Windows Features |
+| `port 5432 already in use` | Stop local PostgreSQL: `sudo systemctl stop postgresql` (Linux) or stop PostgreSQL in Windows Services |
+| `port 3000 already in use` | Kill the process: `lsof -ti:3000 \| xargs kill` |
+| `port 8000 already in use` | Kill the process: `lsof -ti:8000 \| xargs kill` |
+| Backend keeps restarting | Check logs: `docker compose logs backend` — likely a DB connection issue |
+| Frontend build fails | Delete volumes and rebuild: `docker compose down -v && docker compose up --build -d` |
+| `docker compose` not found | Upgrade Docker Desktop or install `docker-compose-plugin` |
+| WSL/Hyper-V issues (Windows) | Enable WSL2 and Hyper-V in Windows Features, restart Docker Desktop |
+| Container `unhealthy` | Wait 30s for DB to initialize, then check: `docker compose ps` |
 
 ---
 
@@ -335,31 +243,36 @@ uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 
 ```
 HackByte4.0/
-├── backend/
-│   ├── alembic/                # Database migration scripts
-│   │   ├── versions/           # Migration files
-│   │   └── env.py              # Alembic environment config
+├── backend/                        # FastAPI Backend
 │   ├── src/
-│   │   ├── models/             # SQLAlchemy ORM models
-│   │   │   ├── accident.py     # Accident model (PostGIS POINT)
-│   │   │   ├── volunteer.py    # Volunteer model (PostGIS POINT)
-│   │   │   ├── task.py         # Task assignment model
-│   │   │   └── base.py         # Declarative base
-│   │   ├── config/             # Settings & database config (coming)
-│   │   ├── controllers/        # Request handlers (coming)
-│   │   ├── routes/             # API routes (coming)
-│   │   ├── services/           # Business logic (coming)
-│   │   └── main.py             # FastAPI app entry point (coming)
-│   ├── alembic.ini             # Alembic configuration
-│   └── venv/                   # Python virtual environment (gitignored)
-├── frontend/                   # Next.js app (coming)
-├── ml-model/                   # ML criticality model (coming)
-├── blockchain/                 # Smart contracts (coming)
-├── scripts/
-│   └── init-postgis.sql        # PostGIS extension initialization
-├── docker-compose.yml          # Docker service definitions
-├── .env.example                # Environment variable template
-├── .gitignore
-├── README.md
-└── SETUP.md                    # ← You are here
+│   │   ├── config/                 # Settings + async DB engine
+│   │   ├── models/                 # SQLAlchemy ORM (Accident, Volunteer, Task)
+│   │   ├── schemas/                # Pydantic v2 request/response schemas
+│   │   ├── routes/                 # REST + WebSocket + Twilio TwiML handlers
+│   │   ├── services/               # Business logic (dispatch, ML, blockchain, etc.)
+│   │   └── main.py                 # FastAPI app entry point
+│   ├── alembic/                    # Database migrations
+│   ├── requirements.txt            # Python dependencies
+│   └── Dockerfile                  # Backend container definition
+│
+├── frontend/                       # Next.js 16 Dashboard + Volunteer Portal
+│   └── src/
+│       ├── app/                    # Pages: landing, login, dashboard/*, portal
+│       ├── components/             # WebSocket, Maps, Navbar, Sidebar
+│       └── lib/api.ts              # API client + TypeScript types
+│   ├── Dockerfile                  # Frontend container definition
+│
+├── blockchain/                     # Solidity Smart Contracts
+│   ├── contracts/RewardPool.sol    # Volunteer reward pool (OpenZeppelin)
+│   ├── scripts/deploy.js           # Deployment script (Polygon Amoy)
+│   ├── test/RewardPool.test.js     # 8 passing tests
+│   └── hardhat.config.js           # Hardhat config (Amoy testnet)
+│
+├── ml-model/                       # ML Model Training
+│   ├── train.py                    # TF-IDF + GradientBoosting trainer
+│   └── training_data.csv           # 600 synthetic accident reports
+│
+├── docker-compose.yml              # All services: DB + Backend + Frontend
+├── .env.example                    # Environment variable template
+└── SETUP.md                        # ← You are here
 ```
