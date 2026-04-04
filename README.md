@@ -1,234 +1,279 @@
-# SmartAccident
+<p align="center">
+  <img src="https://img.shields.io/badge/HackByte_4.0-SmartAccident-blue?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xMCAxM2ExIDEgMCAwIDAgMSAxaDF2LTFhMSAxIDAgMCAwLTEtMUg5YTEgMSAwIDAgMC0xIDFoMiIvPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIxNCIgeD0iMiIgeT0iMyIgcng9IjIiLz48bGluZSB4MT0iOCIgeDI9IjE2IiB5MT0iMjEiIHkyPSIyMSIvPjxsaW5lIHgxPSIxMiIgeDI9IjEyIiB5MT0iMTciIHkyPSIyMSIvPjwvc3ZnPg==&logoColor=white" alt="SmartAccident" />
+  <br/>
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/Next.js_16-000000?style=flat-square&logo=nextdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL+PostGIS-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/Polygon_(Amoy)-7B3FE4?style=flat-square&logo=polygon&logoColor=white" />
+  <img src="https://img.shields.io/badge/Twilio_Voice-F22F46?style=flat-square&logo=twilio&logoColor=white" />
+  <img src="https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikitlearn&logoColor=white" />
+</p>
 
-**Voice-Powered Real-Time Accident Reporting, AI-Prioritized Response, and Blockchain-Incentivized Volunteer Coordination Platform**
+# 🚨 SmartAccident
 
----
+> **Voice-Powered Real-Time Accident Reporting, AI-Prioritized Response, and Blockchain-Incentivized Volunteer Coordination**
 
-## Overview
-
-SmartAccident is a full-stack, real-time emergency management system designed to accelerate the reporting, assessment, and coordinated response to highway accidents and other user-reported incidents.
-
-The platform uses **Twilio Voice Calls** as the primary channel for incident reporting — users simply call a phone number, describe the accident in natural speech, and the system handles the rest. It intelligently integrates **Machine Learning** for accident criticality assessment, **geospatial intelligence** for rapid volunteer dispatch, a **real-time administrative dashboard** for monitoring, and **blockchain-based incentives** to motivate community volunteers.
-
-**Core Objectives:**
-- Significantly reduce emergency response time through automation and intelligent assignment.
-- Enable data-driven decision making with AI-powered severity prediction.
-- Provide complete transparency and accountability to administrators.
-- Build a sustainable volunteer network through transparent cryptocurrency rewards.
-
----
-
-## Key Features
-
-- **Voice-Based Incident Reporting**: Users call a phone number and describe the accident in natural speech. Twilio transcribes the speech and the system processes it automatically.
-- **AI Criticality Assessment**: Machine Learning model (TF-IDF + GradientBoosting) classifies incidents in real-time as *Moderate* or *Highly Critical* with confidence scores.
-- **Geospatial Visualization**: Automatic geocoding and interactive map display of accident locations.
-- **Real-Time Administrative Dashboard**: Live monitoring with criticality level, required assistance, task status, and automated inactivity alerts.
-- **Proximity-Based Volunteer Assignment**: Tasks are automatically assigned to the nearest available volunteer using PostGIS geospatial queries.
-- **Administrative Oversight & Escalation**: Real-time progress tracking with alerts and manual reassignment capability.
-- **Blockchain Reward System**: Volunteers register a crypto wallet address and receive automatic rewards upon verified task completion.
+SmartAccident is a full-stack emergency management platform where anyone can **call a phone number** to report an accident. The system uses **AI** to assess severity, **geospatial intelligence** to dispatch the nearest volunteer, a **real-time dashboard** for live monitoring, and **blockchain smart contracts** to reward verified responders with cryptocurrency.
 
 ---
 
-## System Workflow
+## ⚡ How It Works (30-Second Summary)
 
-1. **User calls the Twilio phone number** to report an accident.
-2. System greets the caller and asks for the **accident location** via speech.
-3. Twilio transcribes the speech → system asks for **accident details**.
-4. Caller describes the accident (injuries, fire, vehicles involved, etc.).
-5. System **geocodes** the location, runs **ML criticality prediction**, auto-extracts **assistance types** from speech.
-6. Incident is stored in the database with full details.
-7. **Geospatial engine** identifies and assigns the task to the **nearest available volunteer**.
-8. System **speaks back confirmation** to the caller: criticality, reference number, and dispatch status.
-9. Dashboard continuously monitors activity and triggers automated alerts if no progress is detected.
-10. Upon successful task verification, the system triggers a **cryptocurrency reward transfer** to the volunteer's wallet.
+```
+📞 User calls Twilio number → 🗣️ Describes accident in speech
+      ↓
+🧠 AI classifies severity (ML model, 99.6% F1)
+      ↓
+📍 Geocodes location → 🗺️ PostGIS finds nearest volunteer
+      ↓
+📊 Live dashboard updates via WebSocket
+      ↓
+✅ Volunteer verifies → 💰 Blockchain sends MATIC reward
+```
 
 ---
 
-## System Architecture
+## 🏗️ System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph "Reporting Layer"
-        A[User / Reporter] -->|Phone Call| B[Twilio Voice + Speech-to-Text]
+    subgraph "📞 Reporting Layer"
+        A["fa:fa-phone User / Reporter"] -->|Phone Call| B["Twilio Voice\n+ Speech-to-Text"]
     end
 
-    subgraph "Core Backend Services"
-        B -->|Transcribed Speech| C[Voice Route Handler]
-        C --> D[PostgreSQL Database + PostGIS]
-        C --> E[Google Maps Geocoding Service]
-        C --> F[ML Criticality Prediction Service]
+    subgraph "⚙️ Core Backend (FastAPI)"
+        B -->|Transcribed Text| C[Voice Route Handler]
+        C --> D["🗄️ PostgreSQL + PostGIS"]
+        C --> E["📍 Google Maps\nGeocoding"]
+        C --> F["🧠 ML Criticality\nPrediction"]
     end
 
-    subgraph "Coordination Layer"
-        F --> G[Incident Processing Engine]
-        G --> H[Real-time Dashboard Service]
-        D --> I[PostGIS Proximity Engine]
-        I --> J[Volunteer Task Assignment]
+    subgraph "🚀 Coordination Layer"
+        F --> G[Incident Processor]
+        G --> D
+        D --> H["🗺️ PostGIS\nProximity Engine"]
+        H --> I[Auto-Dispatch\nNearest Volunteer]
     end
 
-    subgraph "Volunteer Layer"
-        J --> K[Volunteer Portal / App]
-        K -->|Task Progress Updates| D
+    subgraph "📊 Monitoring Layer"
+        D -->|Live Events| J["🔌 WebSocket\nServer"]
+        J --> K["🖥️ Next.js\nAdmin Dashboard"]
     end
 
-    subgraph "Incentive & Monitoring Layer"
-        D -->|Task Completed & Verified| L[Blockchain Reward Service]
-        L --> M[Volunteer Crypto Wallet]
-        H -->|Live Updates & Alerts| N[WebSocket Server]
-        N --> O[Admin Dashboard]
+    subgraph "💰 Incentive Layer"
+        I -->|Task Verified| L["⛓️ RewardPool\nSmart Contract"]
+        L -->|0.01 MATIC| M["👛 Volunteer\nWallet"]
     end
 
-    style H fill:#e1f5fe
-    style O fill:#e8f5e9
+    style K fill:#1a1a2e,stroke:#00d4ff,color:#fff
+    style L fill:#1a1a2e,stroke:#7b3fe4,color:#fff
+    style F fill:#1a1a2e,stroke:#f7931e,color:#fff
 ```
-
-## Major Components
-
-| Component | Description |
-|---|---|
-| **Voice Ingestion** | Twilio voice calls with speech-to-text transcription |
-| **Backend API** | FastAPI (async) with RESTful endpoints + Twilio TwiML responses |
-| **Database** | PostgreSQL + PostGIS for geospatial-enabled storage |
-| **ML Engine** | TF-IDF + GradientBoosting classifier for criticality prediction |
-| **Dispatch** | PostGIS `ST_Distance` based proximity matching |
-| **Frontend** | Next.js admin dashboard + volunteer portal (planned) |
-| **Blockchain** | Polygon smart contracts for reward distribution (planned) |
-
-## Data Flow
-
-```
-Ingress → Phone call → Twilio Speech-to-Text → Voice Route Handler
-Processing → Geocoding → ML Inference → Severity Classification + Assistance Extraction
-Dispatch → PostGIS nearest volunteer query → Automatic Task Assignment + Notification
-Monitoring → WebSocket real-time updates → Dashboard Refresh + Inactivity Alert Engine
-Completion → Task Status Update → Verification → Smart Contract → Crypto Reward Transfer
-```
-
-All operations involving location data and wallet addresses adhere to strict security and privacy standards.
-
-## Repository Structure
-
-```
-smartaccident/
-├── backend/                     # FastAPI Backend Server
-│   ├── src/
-│   │   ├── config/              # Settings & database configuration
-│   │   ├── models/              # SQLAlchemy ORM models (Accident, Volunteer, Task)
-│   │   ├── schemas/             # Pydantic request/response schemas
-│   │   ├── routes/              # API routes (accidents, volunteers, tasks, voice)
-│   │   ├── services/            # Business logic (Twilio, ML, Geocoding, Dispatch)
-│   │   └── utils/               # Geometry conversion helpers
-│   ├── alembic/                 # Database migrations
-│   └── venv/                    # Python virtual environment
-├── ml-model/                    # ML model training & artifacts
-│   ├── train.py                 # Training script (TF-IDF + GradientBoosting)
-│   ├── training_data.csv        # Synthetic training dataset (600 samples)
-│   └── model_metadata.json      # Model performance metadata
-├── frontend/                    # Next.js (Admin + Volunteer UI) — planned
-├── blockchain/                  # Solidity smart contracts — planned
-├── docker-compose.yml           # PostgreSQL + PostGIS container
-├── .env                         # Environment variables (gitignored)
-└── README.md
-```
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Health check |
-| **Voice (Twilio)** | | |
-| `POST` | `/api/v1/voice/incoming` | Handle incoming call — greet, ask for location |
-| `POST` | `/api/v1/voice/location` | Process transcribed location, ask for details |
-| `POST` | `/api/v1/voice/report` | Full pipeline: geocode → ML → store → dispatch → confirm |
-| `POST` | `/api/v1/voice/status` | Twilio call status callback |
-| **Accidents** | | |
-| `GET` | `/api/v1/accidents/` | List all accidents (paginated) |
-| `POST` | `/api/v1/accidents/` | Create accident manually |
-| `GET/PATCH/DELETE` | `/api/v1/accidents/{id}` | Get / Update / Delete accident |
-| **Volunteers** | | |
-| `GET` | `/api/v1/volunteers/` | List all volunteers |
-| `POST` | `/api/v1/volunteers/` | Register a volunteer |
-| `GET/PATCH/DELETE` | `/api/v1/volunteers/{id}` | Get / Update / Delete volunteer |
-| **Tasks** | | |
-| `GET` | `/api/v1/tasks/` | List all dispatch tasks |
-| `POST` | `/api/v1/tasks/` | Create task manually |
-| `GET/PATCH/DELETE` | `/api/v1/tasks/{id}` | Get / Update / Delete task |
-
-## Technology Stack
-
-| Layer | Technology | Rationale |
-|---|---|---|
-| **Voice & Telephony** | Twilio Voice API + Speech-to-Text | Enables natural-language accident reporting via phone calls with automatic speech transcription |
-| **Backend** | Python + FastAPI | High-performance async framework with automatic OpenAPI docs, ideal for ML integration |
-| **Database** | PostgreSQL + PostGIS | Robust relational DB with built-in geospatial querying for proximity-based volunteer matching |
-| **ML Model** | Scikit-learn (TF-IDF + GradientBoosting) | 99.6% F1-score classifier for accident criticality prediction |
-| **Geocoding** | Google Maps Geocoding API | Accurate address-to-coordinate conversion for geospatial dispatch |
-| **Real-time** | FastAPI WebSockets | Live dashboard updates and instant volunteer notifications |
-| **Frontend** | Next.js 15+ (App Router) + React + TypeScript | Modern SSR/SSG framework for admin dashboard and volunteer portal |
-| **Mapping** | Leaflet.js + react-leaflet | Lightweight interactive maps for accident visualization |
-| **Blockchain** | Polygon + Web3.py | Low-cost, fast cryptocurrency reward distribution |
-| **Auth** | JWT + RBAC | Secure role-based access control for Admin and Volunteer roles |
-| **Infrastructure** | Docker + Docker Compose | Consistent development and deployment environments |
 
 ---
 
-## Quick Start
+## 🎯 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **🗣️ Voice Reporting** | Call a phone number → describe accident in natural speech → system handles everything |
+| **🧠 AI Severity Assessment** | TF-IDF + GradientBoosting classifies incidents as *Moderate* or *Highly Critical* (99.6% F1) |
+| **📍 Geospatial Dispatch** | PostGIS `ST_Distance` finds and assigns the nearest available volunteer automatically |
+| **📊 Real-Time Dashboard** | Next.js 16 glassmorphism UI with live WebSocket updates, interactive Leaflet maps |
+| **⛓️ Blockchain Rewards** | Solidity RewardPool contract on Polygon Amoy distributes 0.01 MATIC per verified task |
+| **🔌 WebSocket Events** | `new_accident`, `volunteer_dispatched`, `task_updated` — instant UI updates |
+| **🔒 Double-Payout Prevention** | Smart contract prevents re-rewarding the same task (on-chain guard) |
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| **Telephony** | Twilio Voice API | Natural-language accident reporting via phone calls |
+| **Backend** | FastAPI (async) | High-perf async Python with auto-generated OpenAPI docs |
+| **Database** | PostgreSQL + PostGIS | Geospatial-enabled relational DB for proximity matching |
+| **ML Model** | scikit-learn (TF-IDF + GradientBoosting) | Real-time criticality classification |
+| **Geocoding** | Google Maps API | Address-to-coordinate conversion |
+| **Real-time** | FastAPI WebSockets | Live dashboard push updates |
+| **Frontend** | Next.js 16 + Framer Motion + SWR | SSR dashboard with glassmorphism dark-mode UI |
+| **Maps** | Leaflet.js | Interactive accident visualization |
+| **Blockchain** | Solidity + Hardhat + Polygon Amoy | Trustless volunteer reward distribution |
+| **Backend ↔ Chain** | Web3.py | Python ↔ smart contract interaction |
+| **Infrastructure** | Docker Compose | One-command PostgreSQL + PostGIS setup |
+
+---
+
+## 📂 Repository Structure
+
+```
+HackByte4.0/
+├── backend/                        # FastAPI Backend
+│   ├── src/
+│   │   ├── config/                 # Settings + async DB engine
+│   │   ├── models/                 # SQLAlchemy ORM (Accident, Volunteer, Task)
+│   │   ├── schemas/                # Pydantic v2 request/response schemas
+│   │   ├── routes/                 # REST endpoints + Twilio TwiML handlers
+│   │   ├── services/               # Business logic
+│   │   │   ├── twilio_voice.py     #   Voice TwiML generation
+│   │   │   ├── geocoding.py        #   Google Maps geocoding
+│   │   │   ├── ml_predictor.py     #   ML criticality prediction
+│   │   │   ├── dispatch.py         #   PostGIS proximity dispatch
+│   │   │   ├── blockchain.py       #   Web3.py ↔ RewardPool contract
+│   │   │   └── websocket.py        #   ConnectionManager for live events
+│   │   └── utils/                  # PostGIS ↔ LatLng converters
+│   ├── alembic/                    # Database migrations
+│   └── requirements.txt            # Python dependencies (51 packages)
+│
+├── frontend/                       # Next.js 16 Admin Dashboard
+│   └── src/
+│       ├── app/                    # Pages: /, /accidents, /map, /tasks, /volunteers
+│       ├── components/             # WebSocketProvider, MapComponent, Navbar, Sidebar
+│       └── lib/api.ts              # API client + TypeScript types
+│
+├── blockchain/                     # Solidity Smart Contracts
+│   ├── contracts/RewardPool.sol    # Volunteer reward pool (OpenZeppelin)
+│   ├── scripts/deploy.js           # Deployment script (Polygon Amoy)
+│   ├── test/RewardPool.test.js     # 8 passing tests
+│   └── hardhat.config.js           # Hardhat config (Amoy testnet)
+│
+├── ml-model/                       # ML Model Training
+│   ├── train.py                    # TF-IDF + GradientBoosting trainer
+│   ├── training_data.csv           # 600 synthetic samples
+│   └── model_metadata.json         # Performance metrics
+│
+├── docker-compose.yml              # PostgreSQL + PostGIS + Backend + Frontend
+└── .env.example                    # Environment variable template
+```
+
+---
+
+## 📡 API Endpoints (21 total)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| | **Voice Pipeline (Twilio)** | |
+| `POST` | `/api/v1/voice/incoming` | Handle incoming call → greet → ask location |
+| `POST` | `/api/v1/voice/location` | Process spoken location → ask for details |
+| `POST` | `/api/v1/voice/report` | Full pipeline: geocode → ML → store → dispatch → TwiML |
+| `POST` | `/api/v1/voice/status` | Twilio call status callback |
+| | **Accidents** | |
+| `GET` | `/api/v1/accidents/` | List accidents (paginated, filterable) |
+| `POST` | `/api/v1/accidents/` | Create accident manually |
+| `GET/PATCH/DELETE` | `/api/v1/accidents/{id}` | CRUD operations |
+| | **Volunteers** | |
+| `GET` | `/api/v1/volunteers/` | List volunteers (with `available_only` filter) |
+| `POST` | `/api/v1/volunteers/` | Register volunteer |
+| `GET/PATCH/DELETE` | `/api/v1/volunteers/{id}` | CRUD operations |
+| | **Tasks** | |
+| `GET` | `/api/v1/tasks/` | List dispatch tasks (with `status_filter`) |
+| `POST` | `/api/v1/tasks/` | Create task assignment |
+| `GET/PATCH/DELETE` | `/api/v1/tasks/{id}` | CRUD + **auto-reward on verification** |
+| `GET` | `/api/v1/tasks/pool-info` | Blockchain reward pool stats |
+| | **Real-time** | |
+| `WS` | `/ws` | WebSocket for live event streaming |
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.12+
-- Docker & Docker Compose
-- Twilio account (for voice calls)
 
-### Setup
+- **Python 3.12+** with `pip`
+- **Node.js 20+** with `pnpm`
+- **Docker** (for PostgreSQL + PostGIS)
+- Twilio account *(optional — can simulate calls with curl)*
+
+### 1. Clone & Configure
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/Auxilus08/HackByte4.0.git
 cd HackByte4.0
+cp .env.example .env
+# Edit .env with your credentials (see Environment Variables below)
+```
 
-# 2. Start the database
+### 2. Start the Database
+
+```bash
 docker compose up db -d
+```
 
-# 3. Setup backend
+### 3. Setup Backend
+
+```bash
 cd backend
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt  # or install manually
-
-# 4. Configure environment
-cp ../.env.example ../.env
-# Edit .env with your Twilio credentials:
-#   TWILIO_ACCOUNT_SID=ACxxxxxxxxx
-#   TWILIO_AUTH_TOKEN=your_token
-#   TWILIO_PHONE_NUMBER=+1234567890
-
-# 5. Run migrations
+pip install -r requirements.txt
 alembic upgrade head
-
-# 6. Train ML model
-cd .. && python ml-model/train.py
-
-# 7. Start the server
-cd backend && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+cd ..
 ```
 
-### Testing Voice Calls Locally
+### 4. Train the ML Model
 
 ```bash
-# Simulate what Twilio sends (no Twilio account needed):
+python ml-model/train.py
+```
 
-# Step 1: Incoming call
-curl -X POST http://localhost:8000/api/v1/voice/incoming \
-  -d "From=+919876543210"
+### 5. Start the Backend
 
-# Step 2: Location spoken
-curl -X POST http://localhost:8000/api/v1/voice/location \
-  -d "SpeechResult=NH44+near+Nagpur&Confidence=0.9"
+```bash
+cd backend
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-# Step 3: Full report (triggers pipeline)
+### 6. Start the Frontend
+
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+### 7. Open the Dashboard
+
+Navigate to **http://localhost:3000** 🎉
+
+---
+
+### 🔗 Blockchain Setup (Optional)
+
+```bash
+cd blockchain
+pnpm install
+npx hardhat compile
+npx hardhat test                              # Run 8 contract tests
+npx hardhat run scripts/deploy.js --network amoy  # Deploy to Polygon Amoy
+```
+
+After deployment, update `.env` with the contract address:
+```env
+REWARD_CONTRACT_ADDRESS=0xYourDeployedAddress
+```
+
+---
+
+## 🧪 Testing the Full Pipeline (No Twilio Needed)
+
+```bash
+# 1. Register a volunteer
+curl -X POST http://localhost:8000/api/v1/volunteers/ \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Rahul Sharma","phone":"+919876543210","wallet_address":"0xABC...","location":{"lat":21.15,"lng":79.09}}'
+
+# 2. Simulate a voice call (full pipeline)
 curl -X POST "http://localhost:8000/api/v1/voice/report?location=NH44+near+Nagpur" \
-  -d "SpeechResult=Truck+overturned+5+people+trapped+fire&Confidence=0.9&From=+919876543210"
+  -d "SpeechResult=Major+truck+overturn+5+people+trapped+fire+spreading&Confidence=0.9&From=+919876543210"
+
+# 3. Check the dashboard
+open http://localhost:3000
+
+# 4. Verify a task (triggers blockchain reward)
+curl -X PATCH http://localhost:8000/api/v1/tasks/{TASK_ID} \
+  -H "Content-Type: application/json" \
+  -d '{"status":"verified"}'
 ```
 
 ### Real Phone Calls (with Twilio)
@@ -237,3 +282,58 @@ curl -X POST "http://localhost:8000/api/v1/voice/report?location=NH44+near+Nagpu
 2. Expose your server: `ngrok http 8000`
 3. Set Twilio webhook URL to: `https://your-ngrok.ngrok.io/api/v1/voice/incoming`
 4. Call your Twilio number — the full pipeline runs automatically!
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string |
+| `SECRET_KEY` | ✅ | Application secret key |
+| `TWILIO_ACCOUNT_SID` | ❌ | Twilio account SID (for real calls) |
+| `TWILIO_AUTH_TOKEN` | ❌ | Twilio auth token |
+| `TWILIO_PHONE_NUMBER` | ❌ | Your Twilio phone number |
+| `GOOGLE_MAPS_API_KEY` | ❌ | Google Maps Geocoding API key |
+| `WEB3_PROVIDER_URL` | ❌ | Polygon RPC endpoint |
+| `REWARD_CONTRACT_ADDRESS` | ❌ | Deployed RewardPool contract address |
+| `DEPLOYER_PRIVATE_KEY` | ❌ | Contract owner's private key |
+
+> **Note:** Only `DATABASE_URL` and `SECRET_KEY` are required. All other services fall back gracefully (simulation mode, rule-based ML, coordinate fallback).
+
+---
+
+## 🧠 ML Model Performance
+
+| Metric | Score |
+|--------|-------|
+| **F1 Score** | 99.6% |
+| **Algorithm** | TF-IDF (5000 features) + GradientBoosting |
+| **Training Data** | 600 synthetic accident reports |
+| **Classes** | `Moderate`, `Highly Critical` |
+| **Fallback** | Rule-based keyword scoring when model unavailable |
+
+---
+
+## ⛓️ Smart Contract Details
+
+| Property | Value |
+|----------|-------|
+| **Contract** | `RewardPool.sol` |
+| **Network** | Polygon Amoy Testnet (Chain ID: 80002) |
+| **Reward** | 0.01 MATIC per verified task |
+| **Security** | OpenZeppelin `Ownable` + `ReentrancyGuard` |
+| **Tests** | 8/8 passing (Hardhat) |
+| **Features** | Double-payout prevention, per-volunteer earnings tracking, pool funding |
+
+---
+
+## 👥 Team
+
+**HackByte 4.0** — Built with ❤️
+
+---
+
+## 📜 License
+
+MIT License — see [LICENSE](LICENSE) for details.
