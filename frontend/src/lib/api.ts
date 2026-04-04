@@ -1,5 +1,12 @@
 export const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+export const authedFetcher = (url: string) => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  return fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  }).then((res) => res.json());
+};
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export const API_ROUTES = {
@@ -10,6 +17,12 @@ export const API_ROUTES = {
   volunteer: (id: string) => `${BACKEND_URL}/api/v1/volunteers/${id}`,
   tasks: `${BACKEND_URL}/api/v1/tasks/`,
   task: (id: string) => `${BACKEND_URL}/api/v1/tasks/${id}`,
+  poolInfo: `${BACKEND_URL}/api/v1/tasks/pool-info`,
+  // Auth
+  login: `${BACKEND_URL}/api/v1/auth/login`,
+  register: `${BACKEND_URL}/api/v1/auth/register`,
+  adminLogin: `${BACKEND_URL}/api/v1/auth/admin/login`,
+  me: `${BACKEND_URL}/api/v1/auth/me`,
 };
 
 export type Point = {

@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.settings import settings
-from src.routes import accidents_router, volunteers_router, tasks_router, voice_router
+from src.routes import accidents_router, volunteers_router, tasks_router, voice_router, auth_router
 from src.services.websocket import manager
 
 
@@ -55,6 +55,7 @@ app.include_router(accidents_router, prefix="/api/v1")
 app.include_router(volunteers_router, prefix="/api/v1")
 app.include_router(tasks_router, prefix="/api/v1")
 app.include_router(voice_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
 
 
 # ── Health Check ───────────────────────────────────────────────

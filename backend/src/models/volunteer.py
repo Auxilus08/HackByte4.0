@@ -12,6 +12,7 @@ class Volunteer(Base):
     name = Column(String, nullable=False)
     phone = Column(String, nullable=False, unique=True)
     wallet_address = Column(String, nullable=True) # For blockchain rewards
+    password_hash = Column(String, nullable=True)   # For volunteer login
     
     # Live location of the volunteer
     current_location = Column(Geometry('POINT'), nullable=True)
