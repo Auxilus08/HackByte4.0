@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { fetcher, API_ROUTES, Accident, Task } from "@/lib/api";
+import { fetcher, API_ROUTES, Accident, Task, Volunteer, apiPatch, apiPost } from "@/lib/api";
 import { formatDistanceToNow, format } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import { 
@@ -13,11 +13,14 @@ import {
   User,
   ShieldAlert,
   Activity,
-  Zap
+  Zap,
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 // Map needs to be client-side only
 const DetailMapWithNoSSR = dynamic(() => import("@/components/DetailMap"), { 
@@ -29,19 +32,86 @@ export default function AccidentDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
+  const [dispatching, setDispatching] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [actionError, setActionError] = useState("");
   
-  const { data: accident, error, isLoading } = useSWR<Accident>(
+  const { data: accident, error, isLoading, mutate: mutateAccident } = useSWR<Accident>(
     id ? API_ROUTES.accident(id) : null,
     fetcher
   );
 
-  const { data: tasks } = useSWR<{ total: number; items: Task[] }>(
+  const { data: tasks, mutate: mutateTasks } = useSWR<{ total: number; items: Task[] }>(
     `${API_ROUTES.tasks}`, 
+    fetcher,
+    { refreshInterval: 10000 }
+  );
+
+  const { data: volunteersData } = useSWR<{ total: number; items: Volunteer[] }>(
+    `${API_ROUTES.volunteers}?available_only=true`,
     fetcher
   );
 
   const accidentTasks = tasks?.items.filter(t => t.accident_id === id) || [];
-  const latestTask = accidentTasks[0]; // Assuming newest first
+  const latestTask = accidentTasks[0];
+
+  // Find volunteer name for the assigned task
+  const { data: allVolunteers } = useSWR<{ total: number; items: Volunteer[] }>(
+    `${API_ROUTES.volunteers}`,
+    fetcher
+  );
+  const assignedVolunteer = latestTask ? allVolunteers?.items?.find(v => v.id === latestTask.volunteer_id) : null;
+
+  const handleForceDispatch = async () => {
+    if (!volunteersData?.items?.length) {
+      setActionError("No available volunteers in the network.");
+      return;
+    }
+    setDispatching(true);
+    setActionError("");
+    try {
+      // Pick the first available volunteer
+      const volunteer = volunteersData.items[0];
+      await apiPost(API_ROUTES.tasks, {
+        accident_id: id,
+        volunteer_id: volunteer.id,
+        status: "pending",
+      });
+      // Update accident status to dispatched
+      await apiPatch(API_ROUTES.accident(id), { status: "dispatched" });
+      mutateAccident();
+      mutateTasks();
+    } catch (err: any) {
+      setActionError(err.message || "Dispatch failed");
+    } finally {
+      setDispatching(false);
+    }
+  };
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    setUpdatingStatus(true);
+    setActionError("");
+    try {
+      await apiPatch(API_ROUTES.accident(id), { status: newStatus });
+      mutateAccident();
+    } catch (err: any) {
+      setActionError(err.message || "Status update failed");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleVerifyTask = async (taskId: string) => {
+    setUpdatingStatus(true);
+    try {
+      await apiPatch(API_ROUTES.task(taskId), { status: "verified" });
+      mutateTasks();
+    } catch (err: any) {
+      setActionError(err.message || "Verification failed");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -69,6 +139,13 @@ export default function AccidentDetailPage() {
       </div>
     );
   }
+
+  const statusOptions = [
+    { value: "reported", label: "Reported", color: "yellow" },
+    { value: "assessing", label: "Assessing", color: "purple" },
+    { value: "dispatched", label: "Dispatched", color: "blue" },
+    { value: "resolved", label: "Resolved", color: "emerald" },
+  ];
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-6 animate-in fade-in duration-700">
@@ -114,14 +191,35 @@ export default function AccidentDetailPage() {
                 <div className="space-y-8">
                   <div>
                     <span className="text-[10px] text-gray-500 font-mono uppercase tracking-widest font-bold">Current Node Status</span>
-                    <div className="mt-2.5 flex items-center">
+                    <div className="mt-2.5 flex items-center gap-3 flex-wrap">
                       <span className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest border ${
                         accident.status === 'resolved' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 glow-emerald shadow-[0_0_10px_rgba(16,185,129,0.1)]' :
                         accident.status === 'dispatched' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                        accident.status === 'assessing' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' :
                         'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
                       }`}>
                         {accident.status}
                       </span>
+                    </div>
+                    {/* Status update buttons */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {statusOptions
+                        .filter(s => s.value !== accident.status)
+                        .map(s => (
+                          <button
+                            key={s.value}
+                            onClick={() => handleStatusUpdate(s.value)}
+                            disabled={updatingStatus}
+                            className={`text-[9px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 hover:bg-white/5 ${
+                              s.color === 'yellow' ? 'text-yellow-400 border-yellow-500/20' :
+                              s.color === 'purple' ? 'text-purple-400 border-purple-500/20' :
+                              s.color === 'blue' ? 'text-blue-400 border-blue-500/20' :
+                              'text-emerald-400 border-emerald-500/20'
+                            }`}
+                          >
+                            → {s.label}
+                          </button>
+                      ))}
                     </div>
                   </div>
                   
@@ -143,9 +241,16 @@ export default function AccidentDetailPage() {
                     <span className="text-[10px] text-gray-500 font-mono uppercase tracking-widest font-bold">Geospatial Coordinates</span>
                     <div className="mt-2.5 flex items-start gap-3 bg-black/30 p-3 rounded-xl border border-white/5">
                       <MapPin className="h-5 w-5 text-red-500 shrink-0" />
-                      <span className="text-gray-200 text-sm font-sans leading-relaxed block">
-                        {accident.location_name}
-                      </span>
+                      <div>
+                        <span className="text-gray-200 text-sm font-sans leading-relaxed block">
+                          {accident.location_name}
+                        </span>
+                        {accident.location && (
+                          <span className="text-[10px] font-mono text-gray-500 mt-1 block">
+                            {accident.location.lat.toFixed(6)}, {accident.location.lng.toFixed(6)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -172,7 +277,7 @@ export default function AccidentDetailPage() {
                 <Zap className="h-3.5 w-3.5 text-blue-500" /> Machine Transcription
               </span>
               <p className="text-gray-300 text-lg font-sans leading-relaxed tracking-wide p-6 rounded-xl border border-white/10 bg-white/5 italic shadow-inner">
-                "{accident.description || "Voice buffer empty."}"
+                &quot;{accident.description || "Voice buffer empty."}&quot;
               </p>
             </div>
           </div>
@@ -199,18 +304,26 @@ export default function AccidentDetailPage() {
               Dispatch Override
             </h2>
             
+            {actionError && (
+              <div className="mb-4 text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                {actionError}
+              </div>
+            )}
+
             {latestTask ? (
               <div className="space-y-6 relative z-10">
                  <div className="p-5 bg-gradient-to-br from-blue-900/20 to-black/40 border border-blue-500/20 rounded-xl shadow-inner">
                    <div className="flex items-center gap-4 mb-3">
                      <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 text-lg font-heading font-bold border border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                       V
+                       {assignedVolunteer?.name?.charAt(0)?.toUpperCase() || "V"}
                      </div>
                      <div>
-                       <p className="text-white font-sans font-semibold tracking-wide">Operative Assigned</p>
-                       <Link href={`/volunteers/${latestTask.volunteer_id}`} className="text-xs font-mono tracking-widest text-blue-400 hover:text-blue-300 transition-colors uppercase mt-0.5 block">
-                         ACCESS PROFILE →
-                       </Link>
+                       <p className="text-white font-sans font-semibold tracking-wide">
+                         {assignedVolunteer?.name || "Operative Assigned"}
+                       </p>
+                       {assignedVolunteer && (
+                         <span className="text-[10px] font-mono text-gray-500">{assignedVolunteer.phone}</span>
+                       )}
                      </div>
                    </div>
                  </div>
@@ -223,17 +336,58 @@ export default function AccidentDetailPage() {
                    <div className="w-full bg-gray-900 rounded-full h-2 mt-3 border border-white/5 overflow-hidden">
                      <div 
                         className={`h-2 rounded-full transition-all duration-1000 ${latestTask.status === 'verified' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]'}`} 
-                        style={{ width: latestTask.status === 'completed' || latestTask.status === 'verified' ? '100%' : '50%' }}
+                        style={{ width: 
+                          latestTask.status === 'pending' ? '10%' :
+                          latestTask.status === 'accepted' ? '30%' :
+                          latestTask.status === 'in-progress' ? '60%' :
+                          latestTask.status === 'completed' ? '85%' : '100%'
+                        }}
                      ></div>
                    </div>
                  </div>
+
+                 {/* Admin action buttons based on task status */}
+                 {latestTask.status === 'completed' && (
+                   <button
+                     onClick={() => handleVerifyTask(latestTask.id)}
+                     disabled={updatingStatus}
+                     className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] disabled:opacity-50"
+                   >
+                     {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                     {updatingStatus ? "Processing..." : "Verify & Trigger Reward"}
+                   </button>
+                 )}
+
+                 {latestTask.reward_tx_hash && (
+                   <a
+                     href={`https://amoy.polygonscan.com/tx/${latestTask.reward_tx_hash}`}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="block w-full text-center text-xs text-emerald-400 bg-emerald-500/10 px-4 py-3 rounded-xl border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors font-mono shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+                   >
+                     <span className="text-[9px] text-emerald-500/70 uppercase tracking-widest block mb-1">Reward TX on Polygon</span>
+                     {latestTask.reward_tx_hash.substring(0, 16)}...{latestTask.reward_tx_hash.substring(latestTask.reward_tx_hash.length - 8)}
+                   </a>
+                 )}
               </div>
             ) : (
               <div className="p-6 bg-black/30 rounded-xl border border-white/5 text-center relative z-10">
                 <Activity className="h-10 w-10 text-red-500/40 mx-auto mb-4 animate-pulse" />
-                <p className="text-xs font-mono font-bold tracking-widest text-gray-400 mb-6 uppercase">No Operative Attached</p>
-                <button className="w-full py-3 bg-red-500 hover:bg-red-400 text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:shadow-[0_0_30px_rgba(239,68,68,0.6)] border border-red-400 relative overflow-hidden group">
-                  <span className="relative z-10">Force Dispatch Override</span>
+                <p className="text-xs font-mono font-bold tracking-widest text-gray-400 mb-2 uppercase">No Operative Attached</p>
+                <p className="text-[10px] text-gray-600 mb-6">
+                  {volunteersData?.items?.length 
+                    ? `${volunteersData.items.length} volunteer(s) available` 
+                    : "No volunteers available"}
+                </p>
+                <button 
+                  onClick={handleForceDispatch}
+                  disabled={dispatching || !volunteersData?.items?.length}
+                  className="w-full py-3 bg-red-500 hover:bg-red-400 text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:shadow-[0_0_30px_rgba(239,68,68,0.6)] border border-red-400 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {dispatching && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {dispatching ? "Dispatching..." : "Force Dispatch Override"}
+                  </span>
                   <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
                 </button>
               </div>
@@ -267,10 +421,55 @@ export default function AccidentDetailPage() {
                     <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-50"></div>
                   </div>
                   <div className="pt-0.5">
-                    <div className="text-sm font-sans font-bold text-white tracking-wide mb-1">Geospatial Lock</div>
-                    <div className="text-xs font-sans text-gray-400 leading-relaxed mb-2">PostGIS successfully triangulated nearest active operative.</div>
+                    <div className="text-sm font-sans font-bold text-white tracking-wide mb-1">Volunteer Dispatched</div>
+                    <div className="text-xs font-sans text-gray-400 leading-relaxed mb-2">
+                      {assignedVolunteer 
+                        ? `${assignedVolunteer.name} assigned to this incident.`
+                        : "PostGIS successfully triangulated nearest active operative."}
+                    </div>
                     <div className="text-[10px] font-mono font-bold tracking-widest text-blue-500 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded inline-block">
                       {format(new Date(latestTask.assigned_at), "HH:mm:ss.SSS")}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {latestTask?.accepted_at && (
+                <div className="relative flex items-start gap-4">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full border-[3px] border-[#050505] bg-cyan-500 text-gray-900 shadow-[0_0_10px_rgba(6,182,212,0.5)] shrink-0 z-10 relative"></div>
+                  <div className="pt-0.5">
+                    <div className="text-sm font-sans font-bold text-white tracking-wide mb-1">Task Accepted</div>
+                    <div className="text-xs font-sans text-gray-400 leading-relaxed mb-2">Volunteer confirmed and accepted the mission.</div>
+                    <div className="text-[10px] font-mono font-bold tracking-widest text-cyan-500 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded inline-block">
+                      {format(new Date(latestTask.accepted_at), "HH:mm:ss.SSS")}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {latestTask?.completed_at && (
+                <div className="relative flex items-start gap-4">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full border-[3px] border-[#050505] bg-purple-500 text-gray-900 shadow-[0_0_10px_rgba(168,85,247,0.5)] shrink-0 z-10 relative"></div>
+                  <div className="pt-0.5">
+                    <div className="text-sm font-sans font-bold text-white tracking-wide mb-1">Task Completed</div>
+                    <div className="text-xs font-sans text-gray-400 leading-relaxed mb-2">Volunteer marked the mission as complete. Awaiting admin verification.</div>
+                    <div className="text-[10px] font-mono font-bold tracking-widest text-purple-500 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded inline-block">
+                      {format(new Date(latestTask.completed_at), "HH:mm:ss.SSS")}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {latestTask?.verified_at && (
+                <div className="relative flex items-start gap-4">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full border-[3px] border-[#050505] bg-emerald-400 text-gray-900 shadow-[0_0_10px_rgba(52,211,153,0.5)] shrink-0 z-10 relative"></div>
+                  <div className="pt-0.5">
+                    <div className="text-sm font-sans font-bold text-white tracking-wide mb-1">Verified & Rewarded</div>
+                    <div className="text-xs font-sans text-gray-400 leading-relaxed mb-2">
+                      Admin verified completion. {latestTask.reward_tx_hash ? "MATIC reward distributed via Polygon." : "Reward pending."}
+                    </div>
+                    <div className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded inline-block">
+                      {format(new Date(latestTask.verified_at), "HH:mm:ss.SSS")}
                     </div>
                   </div>
                 </div>

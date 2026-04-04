@@ -34,7 +34,7 @@ export default function VolunteerPortal() {
     }
     const parsed = JSON.parse(stored);
     if (parsed.role !== "volunteer") {
-      router.push("/");
+      router.push("/dashboard");
       return;
     }
     setUser(parsed);
@@ -92,7 +92,7 @@ export default function VolunteerPortal() {
 
       {/* Header */}
       <header className="sticky top-0 z-20 glass-panel border-b border-white/5">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30">
               <Activity className="text-blue-500 h-5 w-5" />
@@ -112,10 +112,10 @@ export default function VolunteerPortal() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-8 relative z-10">
+      <main className="max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8 relative z-10">
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-2xl font-bold font-heading tracking-tight mb-1">
+          <h1 className="text-xl md:text-2xl font-bold font-heading tracking-tight mb-1">
             Welcome back, <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-200">{user.name}</span>
           </h1>
           <p className="text-gray-500 text-sm">Your active missions and reward status</p>
@@ -154,7 +154,7 @@ export default function VolunteerPortal() {
                   animate={{ opacity: 1, x: 0 }}
                   className="glass-panel rounded-2xl p-5 border border-yellow-500/20 hover:border-yellow-500/40 transition-all"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                       <span className="font-mono text-xs text-gray-500">OP-{task.id.split("-")[0].toUpperCase()}</span>
                       <p className="text-sm text-gray-300 mt-1">
@@ -166,7 +166,7 @@ export default function VolunteerPortal() {
                     </div>
                     <button
                       onClick={() => updateTaskStatus(task.id, "accepted")}
-                      className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-heading font-semibold px-5 py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                      className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-heading font-semibold px-5 py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] w-full sm:w-auto"
                     >
                       Accept <ArrowRight className="h-4 w-4" />
                     </button>
@@ -191,7 +191,7 @@ export default function VolunteerPortal() {
                   animate={{ opacity: 1, x: 0 }}
                   className="glass-panel rounded-2xl p-5 border border-purple-500/20"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                       <span className="font-mono text-xs text-gray-500">OP-{task.id.split("-")[0].toUpperCase()}</span>
                       <div className="flex items-center gap-2 mt-1">
@@ -204,7 +204,7 @@ export default function VolunteerPortal() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       {task.status === "accepted" && (
                         <button
                           onClick={() => updateTaskStatus(task.id, "in-progress")}
@@ -243,7 +243,7 @@ export default function VolunteerPortal() {
                   animate={{ opacity: 1, x: 0 }}
                   className="glass-panel rounded-2xl p-5 border border-emerald-500/10"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                       <span className="font-mono text-xs text-gray-500">OP-{task.id.split("-")[0].toUpperCase()}</span>
                       <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">

@@ -13,22 +13,52 @@ import {
   Activity
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
+
+const PAGE_SIZE = 20;
 
 export default function AccidentsListPage() {
   const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
   
   const { data, error, isLoading } = useSWR<{ total: number; items: Accident[] }>(
-    `${API_ROUTES.accidents}?limit=50`, 
+    `${API_ROUTES.accidents}?limit=200`, 
     fetcher,
     { refreshInterval: 10000 }
   );
 
-  const filteredAccidents = data?.items.filter(acc => {
-    if (statusFilter === "all") return true;
-    return acc.status === statusFilter;
-  });
+  const filteredAccidents = useMemo(() => {
+    let items = data?.items || [];
+    if (statusFilter !== "all") {
+      items = items.filter(acc => acc.status === statusFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(acc =>
+        acc.location_name?.toLowerCase().includes(q) ||
+        acc.description?.toLowerCase().includes(q) ||
+        acc.source_id?.toLowerCase().includes(q) ||
+        acc.criticality?.toLowerCase().includes(q)
+      );
+    }
+    return items;
+  }, [data, statusFilter, searchQuery]);
+
+  const totalPages = Math.ceil((filteredAccidents?.length || 0) / PAGE_SIZE);
+  const paginatedAccidents = filteredAccidents?.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Reset page when filters change
+  const handleFilterChange = (val: string) => {
+    setStatusFilter(val);
+    setPage(0);
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setPage(0);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -47,8 +77,10 @@ export default function AccidentsListPage() {
           <div className="relative flex-1 sm:w-72 group">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-white transition-colors z-10" />
             <input 
-              type="text" 
-              placeholder="Search origin locations..." 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search locations, descriptions..." 
               className="w-full pl-10 pr-4 py-2.5 glass-panel rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-red-500/50 focus:border-red-500/50 text-white placeholder-gray-500 transition-all font-sans relative z-0"
             />
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-red-500/20 to-transparent opacity-0 group-focus-within:opacity-10 pointer-events-none transition-opacity blur-md"></div>
@@ -56,7 +88,7 @@ export default function AccidentsListPage() {
           <div className="relative group">
             <select 
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleFilterChange(e.target.value)}
               className="appearance-none pl-10 pr-10 py-2.5 glass-panel rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-red-500/50 text-white font-sans cursor-pointer hover:bg-white/5 transition-colors relative z-0"
             >
               <option value="all" className="bg-gray-900">All Nodes</option>
@@ -100,14 +132,14 @@ export default function AccidentsListPage() {
                     </div>
                   </td>
                 </tr>
-              ) : filteredAccidents?.length === 0 ? (
+              ) : paginatedAccidents?.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-16 text-center text-gray-500">
                     <span className="font-mono text-xs tracking-widest">NO RECORDS MATCH QUERY</span>
                   </td>
                 </tr>
               ) : (
-                filteredAccidents?.map((accident, idx) => (
+                paginatedAccidents?.map((accident, idx) => (
                   <motion.tr 
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -170,7 +202,7 @@ export default function AccidentsListPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <Link 
-                        href={`/accidents/${accident.id}`}
+                        href={`/dashboard/accidents/${accident.id}`}
                         className="inline-flex items-center justify-center p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all hover:scale-105 active:scale-95 group/btn"
                       >
                         <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform" />
@@ -184,10 +216,22 @@ export default function AccidentsListPage() {
         </div>
         
         <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between text-xs text-gray-500 font-mono bg-black/20">
-          <span>QUERY YIELD: <strong className="text-white font-sans">{filteredAccidents?.length || 0}</strong> / <strong className="text-white font-sans">{data?.total || 0}</strong> ROWS</span>
+          <span>QUERY YIELD: <strong className="text-white font-sans">{filteredAccidents?.length || 0}</strong> / <strong className="text-white font-sans">{data?.total || 0}</strong> ROWS{totalPages > 1 && <> · PAGE <strong className="text-white font-sans">{page + 1}</strong> / <strong className="text-white font-sans">{totalPages}</strong></>}</span>
           <div className="flex items-center gap-2">
-            <button className="px-4 py-1.5 border border-white/10 bg-white/5 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-white/5 tracking-wider" disabled>PREV</button>
-            <button className="px-4 py-1.5 border border-white/10 bg-white/5 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-white/5 tracking-wider" disabled>NEXT</button>
+            <button 
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="px-4 py-1.5 border border-white/10 bg-white/5 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed tracking-wider"
+            >
+              PREV
+            </button>
+            <button 
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              className="px-4 py-1.5 border border-white/10 bg-white/5 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed tracking-wider"
+            >
+              NEXT
+            </button>
           </div>
         </div>
       </div>

@@ -36,7 +36,7 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.detail || "Login failed");
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify({ role: data.role, name: data.name, id: data.user_id }));
-      router.push("/");
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message);
     } finally {

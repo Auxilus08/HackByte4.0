@@ -1,35 +1,77 @@
 "use client";
 
 import useSWR from "swr";
-import { fetcher, API_ROUTES, Task } from "@/lib/api";
+import { fetcher, API_ROUTES, Task, apiPatch } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { 
   CheckSquare,
   Shield,
   Clock,
   ArrowRight,
-  Activity
+  Activity,
+  CheckCircle2,
+  Filter
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function TasksPage() {
-  const { data: tasks, isLoading } = useSWR<{ total: number; items: Task[] }>(
+  const { data: tasks, isLoading, mutate } = useSWR<{ total: number; items: Task[] }>(
     `${API_ROUTES.tasks}`, 
     fetcher,
     { refreshInterval: 10000 }
   );
 
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [verifying, setVerifying] = useState<string | null>(null);
+
+  const filteredTasks = tasks?.items?.filter(t => {
+    if (statusFilter === "all") return true;
+    return t.status === statusFilter;
+  }) || [];
+
+  const handleVerify = async (taskId: string) => {
+    setVerifying(taskId);
+    try {
+      await apiPatch(API_ROUTES.task(taskId), { status: "verified" });
+      mutate();
+    } catch (err) {
+      console.error("Failed to verify task:", err);
+    } finally {
+      setVerifying(null);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="relative z-10">
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-500 font-heading tracking-tight mb-2 flex items-center gap-3">
-          <div className="relative flex items-center justify-center p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-            <CheckSquare className="text-blue-500 h-6 w-6" />
-          </div>
-          Active Operations
-        </h1>
-        <p className="text-gray-400 text-sm font-sans tracking-wide">Monitor ongoing responder tasks and Web3 smart contract payouts.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+        <div>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-500 font-heading tracking-tight mb-2 flex items-center gap-3">
+            <div className="relative flex items-center justify-center p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+              <CheckSquare className="text-blue-500 h-6 w-6" />
+            </div>
+            Active Operations
+          </h1>
+          <p className="text-gray-400 text-sm font-sans tracking-wide">Monitor ongoing responder tasks and Web3 smart contract payouts.</p>
+        </div>
+
+        <div className="relative group">
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="appearance-none pl-10 pr-10 py-2.5 glass-panel rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 text-white font-sans cursor-pointer hover:bg-white/5 transition-colors relative z-0"
+          >
+            <option value="all" className="bg-gray-900">All Phases</option>
+            <option value="pending" className="bg-gray-900">Pending</option>
+            <option value="accepted" className="bg-gray-900">Accepted</option>
+            <option value="in-progress" className="bg-gray-900">In Progress</option>
+            <option value="completed" className="bg-gray-900">Completed</option>
+            <option value="verified" className="bg-gray-900">Verified</option>
+          </select>
+          <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none z-10" />
+          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-500"></div>
+        </div>
       </div>
 
       <div className="glass-panel rounded-2xl overflow-hidden shadow-2xl relative">
@@ -44,12 +86,13 @@ export default function TasksPage() {
                 <th className="px-6 py-5 font-bold">Operation Phase</th>
                 <th className="px-6 py-5 font-bold">T0 Sequence</th>
                 <th className="px-6 py-5 font-bold">Web3 Telemetry (Polygon)</th>
+                <th className="px-6 py-5 text-right font-bold">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-16 text-center text-gray-500">
                     <div className="flex flex-col items-center justify-center">
                       <div className="relative w-12 h-12 mb-4 flex items-center justify-center">
                         <div className="absolute inset-0 rounded-full border-[3px] border-white/5"></div>
@@ -60,14 +103,14 @@ export default function TasksPage() {
                     </div>
                   </td>
                 </tr>
-              ) : tasks?.items?.length === 0 ? (
+              ) : filteredTasks.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-16 text-center text-gray-500">
                     <span className="font-mono text-xs tracking-widest">NO DISPATCH OPERATIONS FOUND</span>
                   </td>
                 </tr>
               ) : (
-                tasks?.items?.map((task, idx) => (
+                filteredTasks.map((task, idx) => (
                   <motion.tr 
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -82,7 +125,7 @@ export default function TasksPage() {
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex flex-col gap-2 text-xs">
-                        <Link href={`/accidents/${task.accident_id}`} className="text-blue-400 hover:text-blue-300 font-bold transition-colors flex items-center gap-1.5 uppercase tracking-widest font-mono">
+                        <Link href={`/dashboard/accidents/${task.accident_id}`} className="text-blue-400 hover:text-blue-300 font-bold transition-colors flex items-center gap-1.5 uppercase tracking-widest font-mono">
                           Trace Incident <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                         <span className="text-gray-500 font-mono tracking-widest uppercase bg-white/5 border border-white/5 px-2 py-1 rounded w-fit">
@@ -95,6 +138,7 @@ export default function TasksPage() {
                         task.status === 'verified' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' :
                         task.status === 'completed' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]' :
                         task.status === 'in-progress' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                        task.status === 'accepted' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' :
                         'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
                       }`}>
                         {task.status.replace('-', ' ')}
@@ -119,6 +163,18 @@ export default function TasksPage() {
                         <span className="text-[10px] text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 uppercase font-bold tracking-widest px-3 py-1.5 rounded animate-pulse">Awaiting Contract</span>
                       ) : (
                         <span className="text-[10px] text-gray-500 bg-black/40 border border-white/5 uppercase font-bold tracking-widest px-3 py-1.5 rounded">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      {task.status === 'completed' && (
+                        <button
+                          onClick={() => handleVerify(task.id)}
+                          disabled={verifying === task.id}
+                          className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-emerald-400 font-bold bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 rounded-lg transition-all border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)] hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] disabled:opacity-50"
+                        >
+                          <CheckCircle2 className={`h-3.5 w-3.5 ${verifying === task.id ? 'animate-spin' : ''}`} />
+                          {verifying === task.id ? "Verifying..." : "Verify & Reward"}
+                        </button>
                       )}
                     </td>
                   </motion.tr>
