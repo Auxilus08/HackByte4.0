@@ -1,5 +1,7 @@
 """CRUD routes for Tasks."""
 
+import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,6 +18,9 @@ from src.schemas.task import (
     TaskUpdate,
     TaskList,
 )
+from src.services.blockchain import blockchain_svc
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -46,6 +51,12 @@ async def list_tasks(
         total=total,
         items=[TaskRead.model_validate(r) for r in rows],
     )
+
+
+@router.get("/pool-info")
+async def get_pool_info():
+    """Get blockchain reward pool status."""
+    return await blockchain_svc.get_pool_info()
 
 
 @router.get("/{task_id}", response_model=TaskRead)
@@ -104,15 +115,62 @@ async def update_task(
     body: TaskUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    """Update task status and timestamps."""
+    """Update task status and timestamps.
+    
+    When status is set to 'verified', the system automatically:
+    1. Sets verified_at timestamp
+    2. Distributes a MATIC reward to the volunteer's wallet
+    3. Stores the transaction hash
+    4. Broadcasts the update via WebSocket
+    """
     result = await db.execute(select(Task).where(Task.id == task_id))
     task = result.scalar_one_or_none()
     if task is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Task not found")
 
     update_data = body.model_dump(exclude_unset=True)
+    
+    # ── Detect verification trigger ───────────────────────────
+    is_verification = (
+        update_data.get("status") == "verified"
+        and task.status != "verified"
+        and task.reward_tx_hash is None
+    )
+    
     for field, value in update_data.items():
         setattr(task, field, value)
+
+    # ── Auto-set verified_at timestamp ────────────────────────
+    if is_verification and task.verified_at is None:
+        task.verified_at = datetime.now(timezone.utc)
+
+    # ── Blockchain reward distribution ────────────────────────
+    if is_verification:
+        # Look up the volunteer's wallet address
+        vol_result = await db.execute(
+            select(Volunteer).where(Volunteer.id == task.volunteer_id)
+        )
+        volunteer = vol_result.scalar_one_or_none()
+
+        if volunteer and volunteer.wallet_address:
+            logger.info(
+                "🔗 Triggering blockchain reward for task=%s → volunteer=%s (%s)",
+                str(task.id)[:8], volunteer.name, volunteer.wallet_address[:10] + "...",
+            )
+            tx_hash = await blockchain_svc.distribute_reward(
+                volunteer_wallet=volunteer.wallet_address,
+                task_id=str(task.id),
+            )
+            if tx_hash:
+                task.reward_tx_hash = tx_hash
+                logger.info("✅ Reward tx stored: %s", tx_hash[:20] + "...")
+            else:
+                logger.warning("⚠️ Reward distribution returned no tx hash")
+        else:
+            logger.warning(
+                "⚠️ Cannot distribute reward — volunteer %s has no wallet address",
+                task.volunteer_id,
+            )
 
     await db.flush()
     await db.refresh(task)
@@ -140,3 +198,4 @@ async def delete_task(
     if task is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Task not found")
     await db.delete(task)
+

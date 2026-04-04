@@ -108,9 +108,12 @@ export default function TasksPage() {
                     </td>
                     <td className="px-6 py-5">
                       {task.reward_tx_hash ? (
-                        <a href={`https://mumbai.polygonscan.com/tx/${task.reward_tx_hash}`} target="_blank" className="font-mono text-xs text-purple-400 bg-purple-500/10 px-3 py-1.5 rounded-md border border-purple-500/20 hover:bg-purple-500/20 transition-colors flex items-center gap-2 w-fit">
-                          <Shield className="h-3.5 w-3.5" />
-                          {task.reward_tx_hash.substring(0, 10)}...
+                        <a href={`https://amoy.polygonscan.com/tx/${task.reward_tx_hash}`} target="_blank" rel="noopener noreferrer" className="group font-mono text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-md border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-2 w-fit shadow-[0_0_12px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                          <Shield className="h-3.5 w-3.5 group-hover:animate-pulse" />
+                          <span className="flex flex-col">
+                            <span className="text-[9px] text-emerald-500/70 uppercase tracking-widest">Reward Sent</span>
+                            <span>{task.reward_tx_hash.substring(0, 10)}...{task.reward_tx_hash.substring(task.reward_tx_hash.length - 6)}</span>
+                          </span>
                         </a>
                       ) : task.status === 'verified' ? (
                         <span className="text-[10px] text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 uppercase font-bold tracking-widest px-3 py-1.5 rounded animate-pulse">Awaiting Contract</span>
