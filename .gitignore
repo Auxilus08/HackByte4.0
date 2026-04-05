@@ -72,3 +72,5 @@ coverage/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+# Uploaded proof images
+backend/uploads/

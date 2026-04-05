@@ -1,10 +1,14 @@
 """CRUD routes for Tasks."""
 
 import logging
+import os
+import uuid as uuid_mod
 from datetime import datetime, timezone
+from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,8 +23,14 @@ from src.schemas.task import (
     TaskList,
 )
 from src.services.blockchain import blockchain_svc
+from src.services.verifier import verify_task_images
 
 logger = logging.getLogger(__name__)
+
+# ── Upload directory ──────────────────────────────────────────
+UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "uploads" / "proofs"
+UPLOAD_ROOT = Path(__file__).resolve().parent.parent.parent / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -130,6 +140,15 @@ async def update_task(
 
     update_data = body.model_dump(exclude_unset=True)
     
+    # ── Enforce proof upload before completion ─────────────────
+    if update_data.get("status") == "completed":
+        proofs = task.proof_images or []
+        if len(proofs) < 1:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="You must upload at least one proof image before marking the task as complete. Please upload photos of the emergency scene and that help has arrived.",
+            )
+
     # ── Detect verification trigger ───────────────────────────
     is_verification = (
         update_data.get("status") == "verified"
@@ -199,3 +218,108 @@ async def delete_task(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Task not found")
     await db.delete(task)
 
+
+# ── Proof Image Upload ────────────────────────────────────────
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+MAX_PROOF_IMAGES = 5
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+@router.post("/{task_id}/proofs")
+async def upload_proof_images(
+    task_id: UUID,
+    files: list[UploadFile] = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Upload proof images for a task.
+    
+    Volunteers must upload at least one proof image (emergency scene
+    and/or help arrival) before they can mark a task as completed.
+    Accepts up to 5 images (jpg, jpeg, png, webp), max 10 MB each.
+    """
+    result = await db.execute(select(Task).where(Task.id == task_id))
+    task = result.scalar_one_or_none()
+    if task is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    existing = task.proof_images or []
+    if len(existing) + len(files) > MAX_PROOF_IMAGES:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Maximum {MAX_PROOF_IMAGES} proof images allowed per task. Currently {len(existing)} uploaded.",
+        )
+
+    saved_urls: list[str] = []
+    task_dir = UPLOAD_DIR / str(task_id)
+    task_dir.mkdir(parents=True, exist_ok=True)
+
+    for upload in files:
+        # Validate file extension
+        ext = Path(upload.filename or "").suffix.lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid file type '{ext}'. Allowed: {', '.join(ALLOWED_EXTENSIONS)}",
+            )
+
+        # Read and validate size
+        content = await upload.read()
+        if len(content) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail=f"File '{upload.filename}' exceeds 10 MB limit.",
+            )
+
+        # Save with a unique filename
+        unique_name = f"{uuid_mod.uuid4().hex}{ext}"
+        file_path = task_dir / unique_name
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        # Build the URL path for the file
+        url = f"/uploads/proofs/{task_id}/{unique_name}"
+        saved_urls.append(url)
+
+    # Update the task's proof_images in DB
+    task.proof_images = existing + saved_urls
+    await db.flush()
+    await db.refresh(task)
+
+    # ── Run ML Verification on new images ─────────────────────
+    verification_results = []
+    try:
+        verification_results = await verify_task_images(saved_urls, UPLOAD_ROOT)
+        logger.info(
+            "🔍 Verified %d proof image(s) for task %s",
+            len(verification_results), str(task_id)[:8],
+        )
+    except Exception as e:
+        logger.warning("⚠️ Image verification failed: %s", e)
+        verification_results = [
+            {"image_url": url, "error": "Verification service unavailable"}
+            for url in saved_urls
+        ]
+
+    # Merge with existing verification results
+    existing_results = task.verification_results or []
+    task.verification_results = existing_results + verification_results
+    await db.flush()
+    await db.refresh(task)
+
+    task_data = TaskRead.model_validate(task)
+
+    # ── WebSocket Broadcast ───────────────────────────────────
+    try:
+        from src.services.websocket import manager
+        await manager.broadcast("task_updated", task_data.model_dump(mode="json"))
+    except Exception:
+        pass
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": f"{len(saved_urls)} proof image(s) uploaded successfully.",
+            "proof_images": task.proof_images,
+            "verification_results": task.verification_results,
+        },
+    )

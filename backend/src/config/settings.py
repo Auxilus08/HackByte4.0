@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     REWARD_CONTRACT_ADDRESS: str = ""
     DEPLOYER_PRIVATE_KEY: str = ""
 
+    # ── Image Verifier ML Service ─────────────────────────────
+    VERIFIER_URL: str = "http://localhost:5000"
+
     @property
     def cors_origin_list(self) -> list[str]:
         """Parse comma-separated CORS origins into a list."""

@@ -24,6 +24,8 @@ class TaskRead(BaseModel):
     completed_at: datetime | None = None
     verified_at: datetime | None = None
     reward_tx_hash: str | None = None
+    proof_images: list[str] | None = None
+    verification_results: list[dict] | None = None
 
     model_config = {"from_attributes": True}
 
@@ -35,6 +37,8 @@ class TaskUpdate(BaseModel):
     completed_at: datetime | None = None
     verified_at: datetime | None = None
     reward_tx_hash: str | None = None
+    proof_images: list[str] | None = None
+    verification_results: list[dict] | None = None
 
 
 # ── List wrapper ───────────────────────────────────────────────

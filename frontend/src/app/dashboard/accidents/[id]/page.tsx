@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { fetcher, API_ROUTES, Accident, Task, Volunteer, apiPatch, apiPost } from "@/lib/api";
+import { fetcher, API_ROUTES, Accident, Task, Volunteer, VerificationResult, apiPatch, apiPost } from "@/lib/api";
 import { formatDistanceToNow, format } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import { 
@@ -15,12 +15,20 @@ import {
   Activity,
   Zap,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Camera,
+  Image as ImageIcon,
+  Bot,
+  ShieldCheck,
+  Eye,
+  AlertOctagon,
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { useState } from "react";
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Map needs to be client-side only
 const DetailMapWithNoSSR = dynamic(() => import("@/components/DetailMap"), { 
@@ -348,15 +356,112 @@ export default function AccidentDetailPage() {
 
                  {/* Admin action buttons based on task status */}
                  {latestTask.status === 'completed' && (
-                   <button
-                     onClick={() => handleVerifyTask(latestTask.id)}
-                     disabled={updatingStatus}
-                     className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] disabled:opacity-50"
-                   >
-                     {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                     {updatingStatus ? "Processing..." : "Verify & Trigger Reward"}
-                   </button>
-                 )}
+                    <div className="space-y-4">
+                      {/* Proof Images Gallery with ML Verification */}
+                      {(latestTask.proof_images?.length || 0) > 0 && (
+                        <div className="border border-white/10 bg-black/30 rounded-xl p-5 shadow-inner">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Camera className="h-4 w-4 text-orange-400" />
+                            <span className="text-[10px] text-gray-500 font-mono uppercase tracking-widest font-bold">
+                              Volunteer Proof Images ({latestTask.proof_images!.length})
+                            </span>
+                          </div>
+                          <div className="space-y-3">
+                            {latestTask.proof_images!.map((url: string, i: number) => {
+                              const vr = latestTask.verification_results?.find(
+                                (r: VerificationResult) => r.image_url === url
+                              );
+                              const hasAiWarning = vr?.ai_generated === true;
+                              const isAccident = vr?.is_accident === true;
+                              const borderColor = hasAiWarning
+                                ? "border-red-500/40"
+                                : isAccident
+                                ? "border-emerald-500/30"
+                                : vr?.is_accident === false
+                                ? "border-yellow-500/30"
+                                : "border-white/10";
+
+                              return (
+                                <div key={i} className={`rounded-xl border ${borderColor} overflow-hidden bg-black/20`}>
+                                  <div className="flex gap-3 p-3">
+                                    <a
+                                      href={`${BACKEND_URL}${url}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="w-28 h-20 rounded-lg overflow-hidden shrink-0 relative group cursor-pointer border border-white/10"
+                                    >
+                                      <img
+                                        src={`${BACKEND_URL}${url}`}
+                                        alt={`Proof ${i + 1}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Eye className="h-4 w-4 text-white" />
+                                      </div>
+                                    </a>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest mb-2">Proof #{i + 1}</p>
+                                      {vr && !vr.error ? (
+                                        <div className="space-y-1.5">
+                                          {/* Accident Classification */}
+                                          <div className={`flex items-center gap-2 text-xs ${isAccident ? "text-emerald-400" : "text-yellow-400"}`}>
+                                            <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                                            <span className="font-bold">{vr.label}</span>
+                                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
+                                              {vr.accident_confidence}%
+                                            </span>
+                                          </div>
+                                          {/* AI Generated Check */}
+                                          {vr.ai_generated !== null && vr.ai_generated !== undefined && (
+                                            <div className={`flex items-center gap-2 text-xs ${hasAiWarning ? "text-red-400" : "text-gray-400"}`}>
+                                              {hasAiWarning ? (
+                                                <AlertOctagon className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                                              ) : (
+                                                <Bot className="h-3.5 w-3.5 shrink-0" />
+                                              )}
+                                              <span className={hasAiWarning ? "font-bold" : ""}>
+                                                {hasAiWarning ? "AI Generated" : "Real Image"}
+                                              </span>
+                                              {vr.ai_generated_confidence != null && (
+                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
+                                                  {vr.ai_generated_confidence}%
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : vr?.error ? (
+                                        <p className="text-[10px] text-gray-500 italic">{vr.error}</p>
+                                      ) : (
+                                        <p className="text-[10px] text-gray-600 italic">Verification pending...</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {/* AI Warning Banner */}
+                                  {hasAiWarning && (
+                                    <div className="px-3 py-2 bg-red-500/10 border-t border-red-500/20 flex items-center gap-2">
+                                      <AlertOctagon className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                                      <span className="text-[10px] text-red-400 font-bold uppercase tracking-widest">
+                                        ⚠ AI-Generated Image Detected — Verify Manually
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => handleVerifyTask(latestTask.id)}
+                        disabled={updatingStatus}
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] disabled:opacity-50"
+                      >
+                        {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                        {updatingStatus ? "Processing..." : "Verify & Trigger Reward"}
+                      </button>
+                    </div>
+                  )}
 
                  {latestTask.reward_tx_hash && (
                    <a
@@ -452,7 +557,32 @@ export default function AccidentDetailPage() {
                   <div className="flex items-center justify-center w-5 h-5 rounded-full border-[3px] border-[#050505] bg-purple-500 text-gray-900 shadow-[0_0_10px_rgba(168,85,247,0.5)] shrink-0 z-10 relative"></div>
                   <div className="pt-0.5">
                     <div className="text-sm font-sans font-bold text-white tracking-wide mb-1">Task Completed</div>
-                    <div className="text-xs font-sans text-gray-400 leading-relaxed mb-2">Volunteer marked the mission as complete. Awaiting admin verification.</div>
+                    <div className="text-xs font-sans text-gray-400 leading-relaxed mb-2">
+                      Volunteer marked the mission as complete with {latestTask.proof_images?.length || 0} proof image(s). Awaiting admin verification.
+                    </div>
+                    {/* ML Verification Summary */}
+                    {latestTask.verification_results && latestTask.verification_results.length > 0 && (
+                      <div className="mt-2 mb-2 space-y-1">
+                        {latestTask.verification_results.filter((r: VerificationResult) => !r.error).map((r: VerificationResult, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 text-[10px]">
+                            {r.is_accident ? (
+                              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                                <ShieldCheck className="h-3 w-3" /> Accident {r.accident_confidence}%
+                              </span>
+                            ) : (
+                              <span className="text-yellow-400 font-bold flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" /> Non-Accident {r.accident_confidence ? `${(100 - r.accident_confidence).toFixed(1)}%` : ""}
+                              </span>
+                            )}
+                            {r.ai_generated === true && (
+                              <span className="text-red-400 font-bold flex items-center gap-1 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
+                                <AlertOctagon className="h-3 w-3" /> AI IMAGE
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="text-[10px] font-mono font-bold tracking-widest text-purple-500 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded inline-block">
                       {format(new Date(latestTask.completed_at), "HH:mm:ss.SSS")}
                     </div>

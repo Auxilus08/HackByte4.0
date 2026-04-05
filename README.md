@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/HackByte_4.0-SmartAccident-blue?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xMCAxM2ExIDEgMCAwIDAgMSAxaDF2LTFhMSAxIDAgMCAwLTEtMUg5YTEgMSAwIDAgMC0xIDFoMiIvPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIxNCIgeD0iMiIgeT0iMyIgcng9IjIiLz48bGluZSB4MT0iOCIgeDI9IjE2IiB5MT0iMjEiIHkyPSIyMSIvPjxsaW5lIHgxPSIxMiIgeDI9IjEyIiB5MT0iMTciIHkyPSIyMSIvPjwvc3ZnPg==&logoColor=white" alt="SmartAccident" />
+  <img src="https://img.shields.io/badge/HackByte_4.0-SmartAI-blue?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xMCAxM2ExIDEgMCAwIDAgMSAxaDF2LTFhMSAxIDAgMCAwLTEtMUg5YTEgMSAwIDAgMC0xIDFoMiIvPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIxNCIgeD0iMiIgeT0iMyIgcng9IjIiLz48bGluZSB4MT0iOCIgeDI9IjE2IiB5MT0iMjEiIHkyPSIyMSIvPjxsaW5lIHgxPSIxMiIgeDI9IjEyIiB5MT0iMTciIHkyPSIyMSIvPjwvc3ZnPg==&logoColor=white" alt="SmartAI" />
   <br/>
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" />
   <img src="https://img.shields.io/badge/Next.js_16-000000?style=flat-square&logo=nextdotjs&logoColor=white" />
@@ -9,11 +9,14 @@
   <img src="https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikitlearn&logoColor=white" />
 </p>
 
-# 🚨 SmartAccident
+# 🚨 SmartAISmartAccident
+
+SmartAccident
+SmartAccident
 
 > **Voice-Powered Real-Time Accident Reporting, AI-Prioritized Response, and Blockchain-Incentivized Volunteer Coordination**
 
-SmartAccident is a full-stack emergency management platform where anyone can **call a phone number** to report an accident. The system uses **AI** to assess severity, **geospatial intelligence** to dispatch the nearest volunteer, a **real-time dashboard** for live monitoring, and **blockchain smart contracts** to reward verified responders with cryptocurrency.
+SmartAI is a full-stack emergency management platform where anyone can **call a phone number** to report an accident. The system uses **AI** to assess severity, **geospatial intelligence** to dispatch the nearest volunteer, a **real-time dashboard** for live monitoring, and **blockchain smart contracts** to reward verified responders with cryptocurrency.
 
 ---
 
@@ -74,33 +77,33 @@ flowchart TD
 
 ## 🎯 Key Features
 
-| Feature | Description |
-|---------|-------------|
-| **🗣️ Voice Reporting** | Call a phone number → describe accident in natural speech → system handles everything |
-| **🧠 AI Severity Assessment** | TF-IDF + GradientBoosting classifies incidents as *Moderate* or *Highly Critical* (99.6% F1) |
-| **📍 Geospatial Dispatch** | PostGIS `ST_Distance` finds and assigns the nearest available volunteer automatically |
-| **📊 Real-Time Dashboard** | Next.js 16 glassmorphism UI with live WebSocket updates, interactive Leaflet maps |
-| **⛓️ Blockchain Rewards** | Solidity RewardPool contract on Polygon Amoy distributes 0.01 MATIC per verified task |
-| **🔌 WebSocket Events** | `new_accident`, `volunteer_dispatched`, `task_updated` — instant UI updates |
-| **🔒 Double-Payout Prevention** | Smart contract prevents re-rewarding the same task (on-chain guard) |
+| Feature                         | Description                                                                                  |
+| ------------------------------- | -------------------------------------------------------------------------------------------- |
+| **🗣️ Voice Reporting**          | Call a phone number → describe accident in natural speech → system handles everything        |
+| **🧠 AI Severity Assessment**   | TF-IDF + GradientBoosting classifies incidents as _Moderate_ or _Highly Critical_ (99.6% F1) |
+| **📍 Geospatial Dispatch**      | PostGIS `ST_Distance` finds and assigns the nearest available volunteer automatically        |
+| **📊 Real-Time Dashboard**      | Next.js 16 glassmorphism UI with live WebSocket updates, interactive Leaflet maps            |
+| **⛓️ Blockchain Rewards**       | Solidity RewardPool contract on Polygon Amoy distributes 0.01 MATIC per verified task        |
+| **🔌 WebSocket Events**         | `new_accident`, `volunteer_dispatched`, `task_updated` — instant UI updates                  |
+| **🔒 Double-Payout Prevention** | Smart contract prevents re-rewarding the same task (on-chain guard)                          |
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Telephony** | Twilio Voice API | Natural-language accident reporting via phone calls |
-| **Backend** | FastAPI (async) | High-perf async Python with auto-generated OpenAPI docs |
-| **Database** | PostgreSQL + PostGIS | Geospatial-enabled relational DB for proximity matching |
-| **ML Model** | scikit-learn (TF-IDF + GradientBoosting) | Real-time criticality classification |
-| **Geocoding** | Google Maps API | Address-to-coordinate conversion |
-| **Real-time** | FastAPI WebSockets | Live dashboard push updates |
-| **Frontend** | Next.js 16 + Framer Motion + SWR | SSR dashboard with glassmorphism dark-mode UI |
-| **Maps** | Leaflet.js | Interactive accident visualization |
-| **Blockchain** | Solidity + Hardhat + Polygon Amoy | Trustless volunteer reward distribution |
-| **Backend ↔ Chain** | Web3.py | Python ↔ smart contract interaction |
-| **Infrastructure** | Docker Compose | One-command PostgreSQL + PostGIS setup |
+| Layer               | Technology                               | Why                                                     |
+| ------------------- | ---------------------------------------- | ------------------------------------------------------- |
+| **Telephony**       | Twilio Voice API                         | Natural-language accident reporting via phone calls     |
+| **Backend**         | FastAPI (async)                          | High-perf async Python with auto-generated OpenAPI docs |
+| **Database**        | PostgreSQL + PostGIS                     | Geospatial-enabled relational DB for proximity matching |
+| **ML Model**        | scikit-learn (TF-IDF + GradientBoosting) | Real-time criticality classification                    |
+| **Geocoding**       | Google Maps API                          | Address-to-coordinate conversion                        |
+| **Real-time**       | FastAPI WebSockets                       | Live dashboard push updates                             |
+| **Frontend**        | Next.js 16 + Framer Motion + SWR         | SSR dashboard with glassmorphism dark-mode UI           |
+| **Maps**            | Leaflet.js                               | Interactive accident visualization                      |
+| **Blockchain**      | Solidity + Hardhat + Polygon Amoy        | Trustless volunteer reward distribution                 |
+| **Backend ↔ Chain** | Web3.py                                  | Python ↔ smart contract interaction                     |
+| **Infrastructure**  | Docker Compose                           | One-command PostgreSQL + PostGIS setup                  |
 
 ---
 
@@ -150,29 +153,29 @@ HackByte4.0/
 
 ## 📡 API Endpoints (21 total)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| | **Voice Pipeline (Twilio)** | |
-| `POST` | `/api/v1/voice/incoming` | Handle incoming call → greet → ask location |
-| `POST` | `/api/v1/voice/location` | Process spoken location → ask for details |
-| `POST` | `/api/v1/voice/report` | Full pipeline: geocode → ML → store → dispatch → TwiML |
-| `POST` | `/api/v1/voice/status` | Twilio call status callback |
-| | **Accidents** | |
-| `GET` | `/api/v1/accidents/` | List accidents (paginated, filterable) |
-| `POST` | `/api/v1/accidents/` | Create accident manually |
-| `GET/PATCH/DELETE` | `/api/v1/accidents/{id}` | CRUD operations |
-| | **Volunteers** | |
-| `GET` | `/api/v1/volunteers/` | List volunteers (with `available_only` filter) |
-| `POST` | `/api/v1/volunteers/` | Register volunteer |
-| `GET/PATCH/DELETE` | `/api/v1/volunteers/{id}` | CRUD operations |
-| | **Tasks** | |
-| `GET` | `/api/v1/tasks/` | List dispatch tasks (with `status_filter`) |
-| `POST` | `/api/v1/tasks/` | Create task assignment |
-| `GET/PATCH/DELETE` | `/api/v1/tasks/{id}` | CRUD + **auto-reward on verification** |
-| `GET` | `/api/v1/tasks/pool-info` | Blockchain reward pool stats |
-| | **Real-time** | |
-| `WS` | `/ws` | WebSocket for live event streaming |
+| Method             | Endpoint                    | Description                                            |
+| ------------------ | --------------------------- | ------------------------------------------------------ |
+| `GET`              | `/health`                   | Health check                                           |
+|                    | **Voice Pipeline (Twilio)** |                                                        |
+| `POST`             | `/api/v1/voice/incoming`    | Handle incoming call → greet → ask location            |
+| `POST`             | `/api/v1/voice/location`    | Process spoken location → ask for details              |
+| `POST`             | `/api/v1/voice/report`      | Full pipeline: geocode → ML → store → dispatch → TwiML |
+| `POST`             | `/api/v1/voice/status`      | Twilio call status callback                            |
+|                    | **Accidents**               |                                                        |
+| `GET`              | `/api/v1/accidents/`        | List accidents (paginated, filterable)                 |
+| `POST`             | `/api/v1/accidents/`        | Create accident manually                               |
+| `GET/PATCH/DELETE` | `/api/v1/accidents/{id}`    | CRUD operations                                        |
+|                    | **Volunteers**              |                                                        |
+| `GET`              | `/api/v1/volunteers/`       | List volunteers (with `available_only` filter)         |
+| `POST`             | `/api/v1/volunteers/`       | Register volunteer                                     |
+| `GET/PATCH/DELETE` | `/api/v1/volunteers/{id}`   | CRUD operations                                        |
+|                    | **Tasks**                   |                                                        |
+| `GET`              | `/api/v1/tasks/`            | List dispatch tasks (with `status_filter`)             |
+| `POST`             | `/api/v1/tasks/`            | Create task assignment                                 |
+| `GET/PATCH/DELETE` | `/api/v1/tasks/{id}`        | CRUD + **auto-reward on verification**                 |
+| `GET`              | `/api/v1/tasks/pool-info`   | Blockchain reward pool stats                           |
+|                    | **Real-time**               |                                                        |
+| `WS`               | `/ws`                       | WebSocket for live event streaming                     |
 
 ---
 
@@ -183,7 +186,7 @@ HackByte4.0/
 - **Python 3.12+** with `pip`
 - **Node.js 20+** with `pnpm`
 - **Docker** (for PostgreSQL + PostGIS)
-- Twilio account *(optional — can simulate calls with curl)*
+- Twilio account _(optional — can simulate calls with curl)_
 
 ### 1. Clone & Configure
 
@@ -249,6 +252,7 @@ npx hardhat run scripts/deploy.js --network amoy  # Deploy to Polygon Amoy
 ```
 
 After deployment, update `.env` with the contract address:
+
 ```env
 REWARD_CONTRACT_ADDRESS=0xYourDeployedAddress
 ```
@@ -287,17 +291,17 @@ curl -X PATCH http://localhost:8000/api/v1/tasks/{TASK_ID} \
 
 ## ⚙️ Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `SECRET_KEY` | ✅ | Application secret key |
-| `TWILIO_ACCOUNT_SID` | ❌ | Twilio account SID (for real calls) |
-| `TWILIO_AUTH_TOKEN` | ❌ | Twilio auth token |
-| `TWILIO_PHONE_NUMBER` | ❌ | Your Twilio phone number |
-| `GOOGLE_MAPS_API_KEY` | ❌ | Google Maps Geocoding API key |
-| `WEB3_PROVIDER_URL` | ❌ | Polygon RPC endpoint |
-| `REWARD_CONTRACT_ADDRESS` | ❌ | Deployed RewardPool contract address |
-| `DEPLOYER_PRIVATE_KEY` | ❌ | Contract owner's private key |
+| Variable                  | Required | Description                          |
+| ------------------------- | -------- | ------------------------------------ |
+| `DATABASE_URL`            | ✅       | PostgreSQL connection string         |
+| `SECRET_KEY`              | ✅       | Application secret key               |
+| `TWILIO_ACCOUNT_SID`      | ❌       | Twilio account SID (for real calls)  |
+| `TWILIO_AUTH_TOKEN`       | ❌       | Twilio auth token                    |
+| `TWILIO_PHONE_NUMBER`     | ❌       | Your Twilio phone number             |
+| `GOOGLE_MAPS_API_KEY`     | ❌       | Google Maps Geocoding API key        |
+| `WEB3_PROVIDER_URL`       | ❌       | Polygon RPC endpoint                 |
+| `REWARD_CONTRACT_ADDRESS` | ❌       | Deployed RewardPool contract address |
+| `DEPLOYER_PRIVATE_KEY`    | ❌       | Contract owner's private key         |
 
 > **Note:** Only `DATABASE_URL` and `SECRET_KEY` are required. All other services fall back gracefully (simulation mode, rule-based ML, coordinate fallback).
 
@@ -305,25 +309,25 @@ curl -X PATCH http://localhost:8000/api/v1/tasks/{TASK_ID} \
 
 ## 🧠 ML Model Performance
 
-| Metric | Score |
-|--------|-------|
-| **F1 Score** | 99.6% |
-| **Algorithm** | TF-IDF (5000 features) + GradientBoosting |
-| **Training Data** | 600 synthetic accident reports |
-| **Classes** | `Moderate`, `Highly Critical` |
-| **Fallback** | Rule-based keyword scoring when model unavailable |
+| Metric            | Score                                             |
+| ----------------- | ------------------------------------------------- |
+| **F1 Score**      | 99.6%                                             |
+| **Algorithm**     | TF-IDF (5000 features) + GradientBoosting         |
+| **Training Data** | 600 synthetic accident reports                    |
+| **Classes**       | `Moderate`, `Highly Critical`                     |
+| **Fallback**      | Rule-based keyword scoring when model unavailable |
 
 ---
 
 ## ⛓️ Smart Contract Details
 
-| Property | Value |
-|----------|-------|
-| **Contract** | `RewardPool.sol` |
-| **Network** | Polygon Amoy Testnet (Chain ID: 80002) |
-| **Reward** | 0.01 MATIC per verified task |
-| **Security** | OpenZeppelin `Ownable` + `ReentrancyGuard` |
-| **Tests** | 8/8 passing (Hardhat) |
+| Property     | Value                                                                   |
+| ------------ | ----------------------------------------------------------------------- |
+| **Contract** | `RewardPool.sol`                                                        |
+| **Network**  | Polygon Amoy Testnet (Chain ID: 80002)                                  |
+| **Reward**   | 0.01 MATIC per verified task                                            |
+| **Security** | OpenZeppelin `Ownable` + `ReentrancyGuard`                              |
+| **Tests**    | 8/8 passing (Hardhat)                                                   |
 | **Features** | Double-payout prevention, per-volunteer earnings tracking, pool funding |
 
 ---

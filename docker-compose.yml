@@ -51,6 +51,7 @@ services:
       REWARD_CONTRACT_ADDRESS: ${REWARD_CONTRACT_ADDRESS:-}
       DEPLOYER_PRIVATE_KEY: ${DEPLOYER_PRIVATE_KEY:-}
       CORS_ORIGINS: "http://localhost:3000"
+      VERIFIER_URL: "http://verifier:5000"
     ports:
       - "8000:8000"
     volumes:
@@ -60,6 +61,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      verifier:
+        condition: service_started
+    networks:
+      - smartaccident_net
+
+  # ─────────────────────────────────────────
+  # Image Verifier ML Service (Flask)
+  # ─────────────────────────────────────────
+  verifier:
+    build:
+      context: ./verifier-model
+      dockerfile: Dockerfile
+    container_name: smartaccident_verifier
+    restart: unless-stopped
+    environment:
+      AI_DET_DIR: /app/ai_detector
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./verifier-model:/app
     networks:
       - smartaccident_net
 

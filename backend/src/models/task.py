@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from .base import Base
@@ -19,6 +19,12 @@ class Task(Base):
     accepted_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     verified_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Proof images uploaded by volunteer before completing
+    proof_images = Column(JSON, default=list, nullable=True)
+    
+    # ML verification results from verifier-model (per-image)
+    verification_results = Column(JSON, default=list, nullable=True)
     
     # Blockchain transaction details
     reward_tx_hash = Column(String, nullable=True)

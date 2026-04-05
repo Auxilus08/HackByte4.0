@@ -6,13 +6,19 @@ Run with:
 """
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from src.config.settings import settings
 from src.routes import accidents_router, volunteers_router, tasks_router, voice_router, auth_router
 from src.services.websocket import manager
+
+# ── Ensure uploads directory exists ───────────────────────────
+UPLOAD_ROOT = Path(__file__).resolve().parent.parent / "uploads"
+UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 # ── Lifespan (startup / shutdown) ──────────────────────────────
@@ -49,6 +55,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Static files (uploaded proofs) ────────────────────────────
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_ROOT)), name="uploads")
 
 # ── Routes ─────────────────────────────────────────────────────
 app.include_router(accidents_router, prefix="/api/v1")

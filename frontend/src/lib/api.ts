@@ -17,6 +17,7 @@ export const API_ROUTES = {
   volunteer: (id: string) => `${BACKEND_URL}/api/v1/volunteers/${id}`,
   tasks: `${BACKEND_URL}/api/v1/tasks/`,
   task: (id: string) => `${BACKEND_URL}/api/v1/tasks/${id}`,
+  taskProofs: (id: string) => `${BACKEND_URL}/api/v1/tasks/${id}/proofs`,
   poolInfo: `${BACKEND_URL}/api/v1/tasks/pool-info`,
   // Auth
   login: `${BACKEND_URL}/api/v1/auth/login`,
@@ -64,6 +65,19 @@ export type Task = {
   completed_at: string | null;
   verified_at: string | null;
   reward_tx_hash: string | null;
+  proof_images: string[] | null;
+  verification_results: VerificationResult[] | null;
+};
+
+export type VerificationResult = {
+  image_url: string;
+  is_accident?: boolean;
+  accident_confidence?: number;
+  label?: string;
+  ai_generated?: boolean | null;
+  ai_generated_confidence?: number | null;
+  ai_generated_label?: string | null;
+  error?: string;
 };
 
 // ── API helper functions ─────────────────────────────────────
